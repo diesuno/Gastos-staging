@@ -32,11 +32,40 @@ function traducirErrorAuth(e) {
     return mensajes[e.code] || e.message;
 }
 
-export function registrarUsuario() {
-    const email = document.getElementById('authEmail').value; const pass = document.getElementById('authPassword').value;
-    if(!email || !pass) return mostrarAlerta("Completá el email y la contraseña.");
-    auth.createUserWithEmailAndPassword(email, pass).then(()=>mostrarAlerta("¡Cuenta creada!")).catch(e=>mostrarAlerta(traducirErrorAuth(e)));
+// --- MODAL REGISTRO ---
+export function abrirModalRegistro() {
+    document.getElementById('regNombre').value = '';
+    document.getElementById('regEmail').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regPasswordConfirmar').value = '';
+    document.getElementById('modal-registro').style.display = 'flex';
 }
+export function cerrarModalRegistro() {
+    document.getElementById('modal-registro').style.display = 'none';
+}
+
+export function registrarUsuario() {
+    const nombre = document.getElementById('regNombre').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const pass = document.getElementById('regPassword').value;
+    const passConfirmar = document.getElementById('regPasswordConfirmar').value;
+
+    if (!nombre || !email || !pass || !passConfirmar) return mostrarAlerta("Completá todos los campos.");
+    if (pass.length < 8) return mostrarAlerta("La contraseña tiene que tener al menos 8 caracteres.");
+    if (pass !== passConfirmar) return mostrarAlerta("Las contraseñas no coinciden. Volvé a escribirlas.");
+
+    auth.createUserWithEmailAndPassword(email, pass)
+        .then(() => {
+            // El nombre se guarda apenas se crea la cuenta, para no tener
+            // que pedirlo de nuevo en el onboarding.
+            estadoApp.perfilUsuario.nombre = nombre;
+            guardarDatosEnNube();
+            cerrarModalRegistro();
+            mostrarAlerta("¡Cuenta creada!");
+        })
+        .catch(e => mostrarAlerta(traducirErrorAuth(e)));
+}
+
 export function loginUsuario() {
     const email = document.getElementById('authEmail').value; const pass = document.getElementById('authPassword').value;
     if(!email || !pass) return mostrarAlerta("Completá el email y la contraseña.");
@@ -60,6 +89,23 @@ export function toggleMostrarPassword() {
     input.type = vaAMostrarla ? 'text' : 'password';
     boton.innerHTML = vaAMostrarla ? SVG_OJO_TACHADO : SVG_OJO_ABIERTO;
     boton.setAttribute('aria-label', vaAMostrarla ? 'Ocultar contraseña' : 'Mostrar contraseña');
+}
+
+// Mismo mecanismo que toggleMostrarPassword(), aplicado a los 2 campos de
+// contraseña del modal de registro.
+function toggleMostrarCampoPassword(idInput, idBoton) {
+    let input = document.getElementById(idInput);
+    let boton = document.getElementById(idBoton);
+    let vaAMostrarla = input.type === 'password';
+    input.type = vaAMostrarla ? 'text' : 'password';
+    boton.innerHTML = vaAMostrarla ? SVG_OJO_TACHADO : SVG_OJO_ABIERTO;
+    boton.setAttribute('aria-label', vaAMostrarla ? 'Ocultar contraseña' : 'Mostrar contraseña');
+}
+export function toggleMostrarRegPassword() {
+    toggleMostrarCampoPassword('regPassword', 'btnMostrarRegPassword');
+}
+export function toggleMostrarRegPasswordConfirmar() {
+    toggleMostrarCampoPassword('regPasswordConfirmar', 'btnMostrarRegPasswordConfirmar');
 }
 
 // --- MENÚ DESPLEGABLE DE USUARIO (arriba a la derecha) ---
