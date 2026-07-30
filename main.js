@@ -19,7 +19,9 @@ import {
     guardarModoDesdeOnboarding, guardarCambiosDesdePerfil,
     cambiarPasswordPerfil, toggleMostrarPassword, eliminarCuenta,
     toggleMenuUsuario, abrirModalPerfil, cerrarModalPerfil,
-    mostrarVistaRecuperar, volverALogin, enviarRecuperacionPassword
+    mostrarVistaRecuperar, volverALogin, enviarRecuperacionPassword,
+    abrirModalRegistro, cerrarModalRegistro,
+    toggleMostrarRegPassword, toggleMostrarRegPasswordConfirmar
 } from './auth.js';
 
 import {
@@ -102,6 +104,10 @@ window.cerrarModalPerfil = cerrarModalPerfil;
 window.mostrarVistaRecuperar = mostrarVistaRecuperar;
 window.volverALogin = volverALogin;
 window.enviarRecuperacionPassword = enviarRecuperacionPassword;
+window.abrirModalRegistro = abrirModalRegistro;
+window.cerrarModalRegistro = cerrarModalRegistro;
+window.toggleMostrarRegPassword = toggleMostrarRegPassword;
+window.toggleMostrarRegPasswordConfirmar = toggleMostrarRegPasswordConfirmar;
 window.cambiarPestaña = cambiarPestaña;
 window.actualizarApp = actualizarApp;
 window.evaluarCamposDinamicosGasto = evaluarCamposDinamicosGasto;
