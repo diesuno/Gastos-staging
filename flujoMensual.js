@@ -8,31 +8,36 @@
 // quedar desincronizados entre sí.
 import { estadoApp } from './estado.js';
 import { generarId } from './utilidades.js';
+import { obtenerRangoPeriodo, obtenerKeyPeriodoDeFecha } from './periodo.js';
 
 // Devuelve los movimientos "reales" de un mes puntual (aSel = año, mSel = mes
 // 0-indexado) más los "virtuales" generados por servicios recurrentes activos
 // ese mes (tarjetas/suscripciones que se devengan mes a mes).
 export function obtenerMovimientosDeMes(aSel, mSel) {
-    let fechaSelObj = new Date(aSel, mSel, 1);
+    let { inicio, fin } = obtenerRangoPeriodo(aSel, mSel);
     let keyMes = `${aSel}-${(mSel + 1).toString().padStart(2, '0')}`;
     let esAvanzado = (estadoApp.perfilUsuario.modo === "AVANZADO");
 
     let filtrados = estadoApp.todosLosMovimientos.filter(mov => {
-        let f = new Date(mov.fecha + 'T00:00:00'); return f.getFullYear() === aSel && f.getMonth() === mSel;
+        let f = new Date(mov.fecha + 'T00:00:00'); return f >= inicio && f <= fin;
     });
 
     let movsVirtuales = [];
     if (esAvanzado) {
         estadoApp.suscripciones.forEach(susc => {
-            let fAlta = new Date(susc.fechaAlta + 'T00:00:00'); let fAltaMesObj = new Date(fAlta.getFullYear(), fAlta.getMonth(), 1);
-            if (fechaSelObj < fAltaMesObj) return;
-            if (susc.mesBaja) { let [bA, bM] = susc.mesBaja.split('-').map(Number); if (fechaSelObj >= new Date(bA, bM - 1, 1)) return; }
+            // Las claves "YYYY-MM" comparan bien como texto: si el período
+            // que se está mirando es anterior al de la fecha de alta (o
+            // igual/posterior al de la baja), la suscripción no corresponde acá.
+            let keyAlta = obtenerKeyPeriodoDeFecha(susc.fechaAlta);
+            if (keyMes < keyAlta) return;
+            if (susc.mesBaja && keyMes >= susc.mesBaja) return;
 
             let montoActivo = 0; let diffKeys = Object.keys(susc.montosPorMes).sort();
-            for (let key of diffKeys) { let [kA, kM] = key.split('-').map(Number); if (new Date(kA, kM - 1, 1) <= fechaSelObj) montoActivo = susc.montosPorMes[key]; }
+            for (let key of diffKeys) { if (key <= keyMes) montoActivo = susc.montosPorMes[key]; }
             if (montoActivo === 0) return;
 
-            let vMov = { id: susc.id + "_" + keyMes, idGrupo: susc.id, monto: montoActivo, tipo: susc.tipo, concepto: susc.concepto, fecha: `${aSel}-${(mSel+1).toString().padStart(2,'0')}-01`, metodo: "SERVICIO", debito: susc.debito, dividir: susc.dividir, amigo: susc.amigo, esVirtual: true };
+            let fechaVMov = `${inicio.getFullYear()}-${(inicio.getMonth()+1).toString().padStart(2,'0')}-${inicio.getDate().toString().padStart(2,'0')}`;
+            let vMov = { id: susc.id + "_" + keyMes, idGrupo: susc.id, monto: montoActivo, tipo: susc.tipo, concepto: susc.concepto, fecha: fechaVMov, metodo: "SERVICIO", debito: susc.debito, dividir: susc.dividir, amigo: susc.amigo, esVirtual: true };
 
             let registrarDeuda = false; let mDeuda = 0; let tDeuda = ""; let pushearVMov = true;
             if (susc.dividir === "PAGUE_50_INTEGRO") {

@@ -131,8 +131,18 @@
                         <option value="AVANZADO">🚀 Avanzado (Profesional)</option>
                     </select>
                 </div>
-                <button class="btn-verde" onclick="guardarCambiosDesdePerfil()">Guardar Cambios</button>
             </div>
+        </div>
+
+        <div class="form-section" style="background:#fefce8; border:none;">
+            <h3 style="margin-top:0; color:#a16207;">📅 Ciclo de Cobro</h3>
+            <label style="display:flex; align-items:center; gap:8px; font-weight:600; margin-bottom:12px; cursor:pointer;">
+                <input type="checkbox" id="chkCicloPersonalizado" onchange="toggleCampoDiaCobro()"> Mi mes no empieza el día 1 (cobro en otra fecha)
+            </label>
+            <div class="form-grid" id="boxDiaCobro" style="display:none;">
+                <div class="form-group"><label for="inputDiaCobro">Día de cobro</label><input type="number" id="inputDiaCobro" min="1" max="28" placeholder="Ej: 23"><span class="porcentaje">Tu "mes" va a ir de ese día al día anterior del mes siguiente</span></div>
+            </div>
+            <button class="btn-verde" style="margin-top:12px;" onclick="guardarCambiosDesdePerfil()">Guardar Cambios</button>
         </div>
 
         <div class="form-section" style="background:#eff6ff; border:none;">

@@ -200,6 +200,11 @@ export function cargarDatosDesdeNube(uid) {
         document.getElementById('userNameDisplay').innerText = estadoApp.perfilUsuario.nombre;
         document.getElementById('profileNameInput').value = estadoApp.perfilUsuario.nombre;
 
+        let diaCobro = estadoApp.perfilUsuario.diaCobro || 0;
+        document.getElementById('chkCicloPersonalizado').checked = diaCobro > 0;
+        document.getElementById('inputDiaCobro').value = diaCobro > 0 ? diaCobro : '';
+        toggleCampoDiaCobro();
+
         if (estadoApp.perfilUsuario.modo === "") {
             document.getElementById('onboarding-modal').style.display = 'flex';
         } else {
@@ -235,11 +240,27 @@ export function guardarModoDesdeOnboarding(modoElegido) {
     guardarDatosEnNube();
 }
 
+// Muestra/oculta el campo de Día de Cobro según el checkbox del ciclo
+// personalizado.
+export function toggleCampoDiaCobro() {
+    let activo = document.getElementById('chkCicloPersonalizado').checked;
+    document.getElementById('boxDiaCobro').style.display = activo ? 'block' : 'none';
+}
+
 export function guardarCambiosDesdePerfil() {
     let n = document.getElementById('profileNameInput').value;
     if(n) estadoApp.perfilUsuario.nombre = n;
 
     estadoApp.perfilUsuario.modo = document.getElementById('profileModoInput').value;
+
+    let cicloActivo = document.getElementById('chkCicloPersonalizado').checked;
+    if (cicloActivo) {
+        let dia = parseInt(document.getElementById('inputDiaCobro').value, 10);
+        if (!dia || dia < 1 || dia > 28) return mostrarAlerta("El día de cobro tiene que ser un número entre 1 y 28.");
+        estadoApp.perfilUsuario.diaCobro = dia;
+    } else {
+        estadoApp.perfilUsuario.diaCobro = 0;
+    }
 
     guardarDatosEnNube();
     aplicarFiltrosDeModo();

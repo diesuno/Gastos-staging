@@ -14,6 +14,7 @@
 import { estadoApp } from './estado.js';
 import { calcularFlujoDeMes } from './flujoMensual.js';
 import { precioNominalSp500Usd, normalizarMovimientoInversion } from './utilidades.js';
+import { obtenerKeyPeriodoDeFecha, obtenerKeyPeriodoDeDate } from './periodo.js';
 
 // Recorre mes a mes, desde el primero con actividad hasta el actual, sumando
 // el flujo neto de ese mes y las inversiones/retiros/extracciones en Pesos
@@ -33,7 +34,7 @@ export function reconstruirHistorialPesos() {
     ].filter(Boolean).sort();
 
     let hoy = new Date();
-    let keyHoy = `${hoy.getFullYear()}-${(hoy.getMonth() + 1).toString().padStart(2, '0')}`;
+    let keyHoy = obtenerKeyPeriodoDeDate(hoy);
 
     if (fechas.length === 0) {
         // Todavía no hay ninguna actividad — el saldo es 0.
@@ -59,7 +60,7 @@ export function reconstruirHistorialPesos() {
 
         // 2) Las inversiones/retiros/extracciones en Pesos con fecha en este mes.
         estadoApp.historialInversiones
-            .filter(h => h.fecha.slice(0, 7) === key)
+            .filter(h => obtenerKeyPeriodoDeFecha(h.fecha) === key)
             .forEach(movOriginal => {
                 let mov = normalizarMovimientoInversion(movOriginal);
                 if (mov.origen === "PESOS" && mov.montoOrigen) saldoAcumulado -= mov.montoOrigen;
@@ -101,7 +102,7 @@ export function reconstruirHistorialMensual() {
         if (mov.destino === "S&P 500" && mov.montoDestino) nominalesAcumulado += mov.montoDestino;
         if (mov.origen === "S&P 500" && mov.montoOrigen) nominalesAcumulado -= mov.montoOrigen;
 
-        let key = mov.fecha.slice(0, 7); // "YYYY-MM"
+        let key = obtenerKeyPeriodoDeFecha(mov.fecha);
         nuevoHistorial[key] = { dolares: dolaresAcumulado, sp500Usd: nominalesAcumulado * precioNominalSp500Usd() };
     });
 
@@ -109,7 +110,7 @@ export function reconstruirHistorialMensual() {
     // movimiento este mes — así el gráfico siempre termina en el valor real
     // y actualizado.
     let hoy = new Date();
-    let keyHoy = `${hoy.getFullYear()}-${(hoy.getMonth() + 1).toString().padStart(2, '0')}`;
+    let keyHoy = obtenerKeyPeriodoDeDate(hoy);
     nuevoHistorial[keyHoy] = { dolares: dolaresAcumulado, sp500Usd: nominalesAcumulado * precioNominalSp500Usd() };
 
     estadoApp.historialMensual = nuevoHistorial;

@@ -6,6 +6,7 @@ import { generarId } from './utilidades.js';
 import { mostrarConfirmacion, mostrarPrompt, mostrarAlerta } from './modales.js';
 import { actualizarApp } from './render.js';
 import { guardarDatosEnNube } from './auth.js';
+import { obtenerKeyPeriodoDeFecha } from './periodo.js';
 
 export async function liquidarDeudaIndividual(idMov) {
     let mov = estadoApp.todosLosMovimientos.find(m => m.id === idMov) || estadoApp.movimientosMesGlobal.find(m => m.id === idMov);
@@ -39,7 +40,8 @@ export async function liquidarDeudaGlobal(persona, neto, tipoPagar) {
     if(!mInput) return; let mReal = parseFloat(mInput); if(isNaN(mReal) || mReal <= 0) return;
 
     let sel = document.getElementById('filtroMesAnio'); let [aSel, mSel] = sel.value.split('-').map(Number);
-    let deudasHistoricasReales = estadoApp.todosLosMovimientos.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente" && new Date(m.fecha + 'T00:00:00').getFullYear() === aSel && new Date(m.fecha + 'T00:00:00').getMonth() === mSel);
+    let keySel = `${aSel}-${(mSel + 1).toString().padStart(2, '0')}`;
+    let deudasHistoricasReales = estadoApp.todosLosMovimientos.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente" && obtenerKeyPeriodoDeFecha(m.fecha) === keySel);
     let deudasVirtualesMes = estadoApp.movimientosMesGlobal.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente" && m.esVirtual);
     let todasLasDeudas = [...deudasHistoricasReales, ...deudasVirtualesMes];
 

@@ -7,6 +7,7 @@ import { calcularFlujoDeMes } from './flujoMensual.js';
 import { reconstruirHistorialPesos } from './cierreMensual.js';
 import { renderizarGrafico, seriesGrafico } from './grafico.js';
 import { guardarDatosEnNube } from './auth.js';
+import { obtenerKeyPeriodoDeFecha } from './periodo.js';
 
 // ==========================================
 // 🔀 ORDENAMIENTO Y FILTROS DE TABLAS
@@ -333,8 +334,9 @@ export function actualizarFiltrosDetalle() {
 function actualizarPestañaCuentasCobrar(esAvanzado) {
     let sel = document.getElementById('filtroMesAnio'); if(!sel || !sel.value) return;
     let [aSel, mSel] = sel.value.split('-').map(Number);
+    let keySel = `${aSel}-${(mSel + 1).toString().padStart(2, '0')}`;
 
-    let deudasHistoricasReales = estadoApp.todosLosMovimientos.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente" && new Date(m.fecha + 'T00:00:00').getFullYear() === aSel && new Date(m.fecha + 'T00:00:00').getMonth() === mSel);
+    let deudasHistoricasReales = estadoApp.todosLosMovimientos.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente" && obtenerKeyPeriodoDeFecha(m.fecha) === keySel);
     let deudasVirtualesMes = estadoApp.movimientosMesGlobal.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente" && m.esVirtual);
     let todasLasDeudas = [...deudasHistoricasReales, ...deudasVirtualesMes];
 

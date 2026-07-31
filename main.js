@@ -21,7 +21,8 @@ import {
     toggleMenuUsuario, abrirModalPerfil, cerrarModalPerfil,
     mostrarVistaRecuperar, volverALogin, enviarRecuperacionPassword,
     abrirModalRegistro, cerrarModalRegistro,
-    toggleMostrarRegPassword, toggleMostrarRegPasswordConfirmar
+    toggleMostrarRegPassword, toggleMostrarRegPasswordConfirmar,
+    toggleCampoDiaCobro
 } from './auth.js';
 
 import {
@@ -108,6 +109,7 @@ window.abrirModalRegistro = abrirModalRegistro;
 window.cerrarModalRegistro = cerrarModalRegistro;
 window.toggleMostrarRegPassword = toggleMostrarRegPassword;
 window.toggleMostrarRegPasswordConfirmar = toggleMostrarRegPasswordConfirmar;
+window.toggleCampoDiaCobro = toggleCampoDiaCobro;
 window.cambiarPestaña = cambiarPestaña;
 window.actualizarApp = actualizarApp;
 window.evaluarCamposDinamicosGasto = evaluarCamposDinamicosGasto;

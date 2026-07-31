@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v9.5.1'; // Gráfico más fácil de tocar en el celular: área táctil más grande y tooltip por columna
+const CACHE_NAME = 'finanzas-v10.0.0'; // Ciclo de cobro personalizado (día del mes distinto a 1), configurable en Mi Perfil
 const urlsToCache = [
   './',
   './index.html',
@@ -16,7 +16,8 @@ const urlsToCache = [
   './render.js',
   './grafico.js',
   './flujoMensual.js',
-  './cierreMensual.js'
+  './cierreMensual.js',
+  './periodo.js'
 ];
 
 // Instala la nueva versión

@@ -43,7 +43,10 @@ export const estadoApp = {
     historialPesosPorMes: {},
 
     listaAmigos: [],
-    perfilUsuario: { nombre: "Usuario", modo: "" },
+    // "diaCobro" es 0 por defecto (mes calendario de siempre). Si la persona
+    // activa el ciclo de cobro personalizado en Mi Perfil, pasa a ser el día
+    // del mes en que arranca su "mes" (1-28) — ver periodo.js.
+    perfilUsuario: { nombre: "Usuario", modo: "", diaCobro: 0 },
 
     movimientosMesGlobal: [],
     keyMesActualGlobal: "",
