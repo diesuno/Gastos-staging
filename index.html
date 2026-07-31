@@ -319,6 +319,22 @@
         </div>
 
         <h2>Detalle de Movimientos del Mes</h2>
+        <div class="form-section" style="padding:16px;">
+            <div class="form-grid" style="align-items:end;">
+                <div class="form-group"><label for="buscarMovimientos">Buscar</label><input type="text" id="buscarMovimientos" placeholder="Buscar por texto..." oninput="aplicarFiltrosMovimientos()"></div>
+                <div class="form-group avanzado-only"><label for="filtroMetodoMovimientos">Método</label>
+                    <select id="filtroMetodoMovimientos" onchange="aplicarFiltrosMovimientos()">
+                        <option value="TODOS">Todos</option>
+                        <option value="EN_EL_ACTO">En el Acto</option>
+                        <option value="CREDITO">Tarjeta</option>
+                        <option value="SERVICIO">Servicio</option>
+                    </select>
+                </div>
+                <div class="form-group"><label for="filtroFechaDesde">Desde</label><input type="date" id="filtroFechaDesde" onchange="aplicarFiltrosMovimientos()"></div>
+                <div class="form-group"><label for="filtroFechaHasta">Hasta</label><input type="date" id="filtroFechaHasta" onchange="aplicarFiltrosMovimientos()"></div>
+                <button class="btn-secundario" style="height:46px;" onclick="limpiarFiltrosMovimientos()">Limpiar Filtros</button>
+            </div>
+        </div>
         <table>
             <thead id="headTablaMovimientos">
                 <!-- Se llena dinámicamente -->
@@ -465,7 +481,7 @@
             <select id="filtroDetalleAnio" onchange="actualizarFiltrosDetalle()"></select>
         </div>
         <table>
-            <thead><tr><th>Mov</th><th>Detalle</th><th>Instrumento</th><th>Monto</th><th>Fecha</th><th>Acción</th></tr></thead>
+            <thead><tr><th>Mov</th><th>Detalle</th><th>Instrumento</th><th>Monto</th><th id="thFechaDetalleInversiones" style="cursor:pointer;" onclick="ordenarTabla('detalleInversiones','fecha','fecha')">Fecha</th><th>Acción</th></tr></thead>
             <tbody id="tablaDetalleInversiones"></tbody>
         </table>
     </div>
@@ -488,20 +504,20 @@
 
         <h3 class="avanzado-only" style="color:#1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">🛒 Deudas Diarias (Pagadas en el Acto)</h3>
         <table class="avanzado-only">
-            <thead><tr><th>Fecha</th><th>Persona</th><th>Texto Original</th><th>Monto</th><th>Acción</th></tr></thead>
+            <thead><tr><th id="thFechaDeudasDiarias" style="cursor:pointer;" onclick="ordenarTabla('deudasDiarias','fecha','fecha')">Fecha</th><th>Persona</th><th>Texto Original</th><th>Monto</th><th>Acción</th></tr></thead>
             <tbody id="tablaDeudasDiarias"></tbody>
         </table>
 
         <h3 class="avanzado-only" style="color:#1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 30px;">💳 Deudas de Tarjetas y Servicios Mensuales</h3>
         <table class="avanzado-only">
-            <thead><tr><th>Fecha</th><th>Persona</th><th>Texto Original</th><th>Monto</th><th>Acción</th></tr></thead>
+            <thead><tr><th id="thFechaDeudasFijas" style="cursor:pointer;" onclick="ordenarTabla('deudasFijas','fecha','fecha')">Fecha</th><th>Persona</th><th>Texto Original</th><th>Monto</th><th>Acción</th></tr></thead>
             <tbody id="tablaDeudasFijas"></tbody>
         </table>
 
         <!-- TABLA ÚNICA BÁSICA -->
         <h3 id="tituloDeudaUnica" style="color:#1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; display:none;">📋 Listado de Deudas Pendientes</h3>
         <table id="tablaDeudaUnica" style="display:none;">
-            <thead><tr><th>Fecha</th><th>Persona</th><th>Concepto Original</th><th>Monto</th><th>Acción</th></tr></thead>
+            <thead><tr><th id="thFechaDeudasBasicas" style="cursor:pointer;" onclick="ordenarTabla('deudasBasicas','fecha','fecha')">Fecha</th><th>Persona</th><th>Concepto Original</th><th>Monto</th><th>Acción</th></tr></thead>
             <tbody id="tablaDeudasBasicas"></tbody>
         </table>
 

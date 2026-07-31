@@ -45,7 +45,7 @@ import {
 
 import { toggleSerieGrafico, setMesesAMostrar } from './grafico.js';
 
-import { inicializarSelectorHistorico, cambiarPestaña, actualizarApp, actualizarFiltrosDetalle } from './render.js';
+import { inicializarSelectorHistorico, cambiarPestaña, actualizarApp, actualizarFiltrosDetalle, ordenarTabla, aplicarFiltrosMovimientos, limpiarFiltrosMovimientos } from './render.js';
 
 // --- INICIALIZACIÓN DE CAMPOS DE FECHA ---
 document.getElementById('inputFecha').valueAsDate = fechaActual;
@@ -136,3 +136,6 @@ window.ejecutarExtraccion = ejecutarExtraccion;
 window.toggleSerieGrafico = toggleSerieGrafico;
 window.setMesesAMostrar = setMesesAMostrar;
 window.actualizarFiltrosDetalle = actualizarFiltrosDetalle;
+window.ordenarTabla = ordenarTabla;
+window.aplicarFiltrosMovimientos = aplicarFiltrosMovimientos;
+window.limpiarFiltrosMovimientos = limpiarFiltrosMovimientos;

@@ -8,6 +8,65 @@ import { reconstruirHistorialPesos } from './cierreMensual.js';
 import { renderizarGrafico, seriesGrafico } from './grafico.js';
 import { guardarDatosEnNube } from './auth.js';
 
+// ==========================================
+// 🔀 ORDENAMIENTO Y FILTROS DE TABLAS
+// ==========================================
+// Estado de orden por tabla (no se persiste, es solo una preferencia de esta
+// sesión de uso) y filtros de "Detalle de Movimientos del Mes".
+let ordenTablas = {
+    movimientos: { campo: 'fecha', ascendente: false },
+    deudasBasicas: { campo: 'fecha', ascendente: false },
+    deudasDiarias: { campo: 'fecha', ascendente: false },
+    deudasFijas: { campo: 'fecha', ascendente: false },
+    detalleInversiones: { campo: 'fecha', ascendente: false },
+};
+let filtrosMovimientos = { metodo: 'TODOS', desde: '', hasta: '', busqueda: '' };
+
+// Compara 2 valores para ordenar (soporta texto y números por igual — las
+// fechas ya vienen como texto "YYYY-MM-DD", que ordena bien alfabéticamente).
+function compararValores(a, b) {
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return String(a).localeCompare(String(b), 'es', { sensitivity: 'base' });
+}
+
+// Arma la flechita (▲/▼) para el encabezado que está activo, vacío si no.
+function iconoOrden(tabla, campo) {
+    let o = ordenTablas[tabla];
+    if (o.campo !== campo) return '';
+    return o.ascendente ? ' ▲' : ' ▼';
+}
+
+// Alterna el orden de una tabla al hacer clic en un encabezado: si ya estaba
+// ordenada por ese campo, invierte el sentido; si es un campo nuevo, arranca
+// en el sentido por defecto según el tipo (fecha/número: el más grande
+// primero; texto: A-Z).
+export function ordenarTabla(tabla, campo, tipo) {
+    let o = ordenTablas[tabla];
+    if (o.campo === campo) {
+        o.ascendente = !o.ascendente;
+    } else {
+        o.campo = campo;
+        o.ascendente = (tipo === 'texto');
+    }
+    actualizarApp();
+}
+
+export function aplicarFiltrosMovimientos() {
+    filtrosMovimientos.metodo = document.getElementById('filtroMetodoMovimientos').value;
+    filtrosMovimientos.desde = document.getElementById('filtroFechaDesde').value;
+    filtrosMovimientos.hasta = document.getElementById('filtroFechaHasta').value;
+    filtrosMovimientos.busqueda = document.getElementById('buscarMovimientos').value.trim().toLowerCase();
+    actualizarApp();
+}
+
+export function limpiarFiltrosMovimientos() {
+    document.getElementById('filtroMetodoMovimientos').value = 'TODOS';
+    document.getElementById('filtroFechaDesde').value = '';
+    document.getElementById('filtroFechaHasta').value = '';
+    document.getElementById('buscarMovimientos').value = '';
+    aplicarFiltrosMovimientos();
+}
+
 export function inicializarSelectorHistorico() {
     let sel = document.getElementById('filtroMesAnio'); if(sel.innerHTML !== '') return;
     let anio = fechaActual.getFullYear();
@@ -83,13 +142,36 @@ export function actualizarApp() {
     // RENDER TABLA FLUJO
     let tabla = document.getElementById('tablaMovimientos'); tabla.innerHTML = '';
     let thead = document.getElementById('headTablaMovimientos');
+    let ordenMov = ordenTablas.movimientos;
+
     if (esAvanzado) {
-        thead.innerHTML = `<tr><th>Fecha</th><th>Texto</th><th>Método</th><th>Monto Total</th><th>Compartido</th><th>Deuda Asoc.</th><th>Acción</th></tr>`;
+        thead.innerHTML = `<tr>
+            <th style="cursor:pointer;" onclick="ordenarTabla('movimientos','fecha','fecha')">Fecha${iconoOrden('movimientos','fecha')}</th>
+            <th style="cursor:pointer;" onclick="ordenarTabla('movimientos','texto','texto')">Texto${iconoOrden('movimientos','texto')}</th>
+            <th style="cursor:pointer;" onclick="ordenarTabla('movimientos','metodo','texto')">Método${iconoOrden('movimientos','metodo')}</th>
+            <th style="cursor:pointer;" onclick="ordenarTabla('movimientos','monto','numero')">Monto Total${iconoOrden('movimientos','monto')}</th>
+            <th>Compartido</th><th>Deuda Asoc.</th><th>Acción</th></tr>`;
 
         let gruposUI = agruparMovimientosPorGrupo(estadoApp.movimientosMesGlobal);
+        let filas = Object.values(gruposUI).filter(mov => !(mov.tipo === "Ingreso" && mov.monto === 0));
 
-        [...Object.values(gruposUI)].reverse().forEach(mov => {
-            if(mov.tipo === "Ingreso" && mov.monto === 0) return;
+        filas = filas.filter(mov => {
+            if (filtrosMovimientos.metodo !== 'TODOS' && (mov.metodo || 'EN_EL_ACTO') !== filtrosMovimientos.metodo) return false;
+            if (filtrosMovimientos.desde && mov.fecha < filtrosMovimientos.desde) return false;
+            if (filtrosMovimientos.hasta && mov.fecha > filtrosMovimientos.hasta) return false;
+            if (filtrosMovimientos.busqueda && !mov.conceptoOriginal.toLowerCase().includes(filtrosMovimientos.busqueda)) return false;
+            return true;
+        });
+
+        let valorDeMov = (mov) => {
+            if (ordenMov.campo === 'texto') return mov.conceptoOriginal;
+            if (ordenMov.campo === 'metodo') return mov.metodo || '';
+            if (ordenMov.campo === 'monto') return mov.montoTotalAgrupado;
+            return mov.fecha;
+        };
+        filas.sort((a, b) => (ordenMov.ascendente ? 1 : -1) * compararValores(valorDeMov(a), valorDeMov(b)));
+
+        filas.forEach(mov => {
             let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
             let mtdText = mov.metodo === "CREDITO" ? "💳 Crédito" : (mov.metodo === "SERVICIO" ? "🔌 Servicio" : "💵 En el Acto");
             let lblComp = mov.esCompartido === "SÍ" ? `<span style="color:#0ea5e9; font-weight:bold;">SÍ</span>` : "No";
@@ -97,9 +179,30 @@ export function actualizarApp() {
             tabla.innerHTML += `<tr><td>${ff}</td><td>${escapeHTML(mov.conceptoOriginal)}</td><td>${mtdText}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-borrar" onclick="${mov.esVirtual ? `darDeBajaServicio('${mov.idGrupo}')` : `borrarMovimientoReal('${mov.idGrupo}')`}">X</button></td></tr>`;
         });
     } else {
-        thead.innerHTML = `<tr><th>Fecha</th><th>Concepto</th><th>Tipo</th><th>Monto</th><th>Acción</th></tr>`;
-        [...estadoApp.movimientosMesGlobal].reverse().forEach(mov => {
-            if(mov.tipo === "Cuenta Cobrar") return;
+        thead.innerHTML = `<tr>
+            <th style="cursor:pointer;" onclick="ordenarTabla('movimientos','fecha','fecha')">Fecha${iconoOrden('movimientos','fecha')}</th>
+            <th style="cursor:pointer;" onclick="ordenarTabla('movimientos','texto','texto')">Concepto${iconoOrden('movimientos','texto')}</th>
+            <th style="cursor:pointer;" onclick="ordenarTabla('movimientos','tipo','texto')">Tipo${iconoOrden('movimientos','tipo')}</th>
+            <th style="cursor:pointer;" onclick="ordenarTabla('movimientos','monto','numero')">Monto${iconoOrden('movimientos','monto')}</th>
+            <th>Acción</th></tr>`;
+
+        let filas = estadoApp.movimientosMesGlobal.filter(mov => mov.tipo !== "Cuenta Cobrar");
+        filas = filas.filter(mov => {
+            if (filtrosMovimientos.desde && mov.fecha < filtrosMovimientos.desde) return false;
+            if (filtrosMovimientos.hasta && mov.fecha > filtrosMovimientos.hasta) return false;
+            if (filtrosMovimientos.busqueda && !mov.concepto.toLowerCase().includes(filtrosMovimientos.busqueda)) return false;
+            return true;
+        });
+
+        let valorDeMovBasico = (mov) => {
+            if (ordenMov.campo === 'texto') return mov.concepto;
+            if (ordenMov.campo === 'tipo') return mov.tipo;
+            if (ordenMov.campo === 'monto') return mov.monto;
+            return mov.fecha;
+        };
+        filas.sort((a, b) => (ordenMov.ascendente ? 1 : -1) * compararValores(valorDeMovBasico(a), valorDeMovBasico(b)));
+
+        filas.forEach(mov => {
             let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
             tabla.innerHTML += `<tr><td>${ff}</td><td>${escapeHTML(mov.concepto)}</td><td>${mov.tipo}</td><td>$${mov.monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td><button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">X</button></td></tr>`;
         });
@@ -200,12 +303,17 @@ function renderizarTablaDetalleInversiones() {
     let filtroInst = document.getElementById('filtroDetalleInstrumento').value;
     let filtroAnio = document.getElementById('filtroDetalleAnio').value;
     let tbody = document.getElementById('tablaDetalleInversiones'); tbody.innerHTML = '';
+    document.getElementById('thFechaDetalleInversiones').innerHTML = `Fecha${iconoOrden('detalleInversiones', 'fecha')}`;
+    let ordenDetInv = ordenTablas.detalleInversiones;
 
-    [...estadoApp.historialInversiones].reverse().filter(h => {
+    let filas = [...estadoApp.historialInversiones].filter(h => {
         if (filtroInst !== 'TODOS' && h.instrumento !== filtroInst) return false;
         if (filtroAnio !== 'TODOS' && new Date(h.fecha + 'T00:00:00').getFullYear().toString() !== filtroAnio) return false;
         return true;
-    }).forEach(h => {
+    });
+    filas.sort((a, b) => (ordenDetInv.ascendente ? 1 : -1) * compararValores(a.fecha, b.fecha));
+
+    filas.forEach(h => {
         let f = new Date(h.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
         let { monto, simbolo } = obtenerMontoYSimboloParaMostrar(h);
         // Los nominales (sin símbolo de moneda) se muestran redondeados; los
@@ -231,8 +339,12 @@ function actualizarPestañaCuentasCobrar(esAvanzado) {
     let todasLasDeudas = [...deudasHistoricasReales, ...deudasVirtualesMes];
 
     if (!esAvanzado) {
+        document.getElementById('thFechaDeudasBasicas').innerHTML = `Fecha${iconoOrden('deudasBasicas', 'fecha')}`;
+        let ordenBasicas = ordenTablas.deudasBasicas;
+        let filasBasicas = [...todasLasDeudas].sort((a, b) => (ordenBasicas.ascendente ? 1 : -1) * compararValores(a.fecha, b.fecha));
+
         let tbBasica = document.getElementById('tablaDeudasBasicas'); tbBasica.innerHTML = '';
-        todasLasDeudas.forEach(mov => {
+        filasBasicas.forEach(mov => {
             let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
             let sim = mov.sentido === "A_FAVOR" ? `$${mov.monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` : `-$${mov.monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})} (Debo)`;
             let btnA = mov.sentido === "A_FAVOR" ? `<button class="btn-verde" style="padding:3px; font-size:0.8em;" onclick="liquidarDeudaIndividual('${mov.id}')">Cobrar</button>` : `<button class="btn-naranja" style="padding:3px; font-size:0.8em;" onclick="liquidarDeudaIndividual('${mov.id}')">Pagar</button>`;
@@ -242,24 +354,40 @@ function actualizarPestañaCuentasCobrar(esAvanzado) {
     }
 
     // MODO AVANZADO
+    document.getElementById('thFechaDeudasDiarias').innerHTML = `Fecha${iconoOrden('deudasDiarias', 'fecha')}`;
+    document.getElementById('thFechaDeudasFijas').innerHTML = `Fecha${iconoOrden('deudasFijas', 'fecha')}`;
+    let ordenDiarias = ordenTablas.deudasDiarias;
+    let ordenFijas = ordenTablas.deudasFijas;
+
     let totDiario = {}; let totFijo = {};
     estadoApp.listaAmigos.forEach(am => { totDiario[am] = 0; totFijo[am] = 0; });
-    let tbDiaria = document.getElementById('tablaDeudasDiarias'); tbDiaria.innerHTML = '';
-    let tbFija = document.getElementById('tablaDeudasFijas'); tbFija.innerHTML = '';
 
+    // Los totales por persona se calculan sobre TODAS las deudas (sin
+    // importar el orden en que después se muestren las filas).
     todasLasDeudas.forEach(mov => {
         let esDiario = (mov.metodo === "EN_EL_ACTO");
         if(totDiario[mov.deudor] !== undefined) {
             if(esDiario) totDiario[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto;
             else totFijo[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto;
         }
+    });
+
+    let filaHtml = (mov) => {
         let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
         let sim = mov.sentido === "A_FAVOR" ? `$${mov.monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` : `-$${mov.monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})} (Debo)`;
         let btnA = mov.sentido === "A_FAVOR" ? `<button class="btn-verde" style="padding:3px; font-size:0.8em;" onclick="liquidarDeudaIndividual('${mov.id}')">Cobrar</button>` : `<button class="btn-naranja" style="padding:3px; font-size:0.8em;" onclick="liquidarDeudaIndividual('${mov.id}')">Pagar</button>`;
-        let htmlRow = `<tr><td>${ff}</td><td><strong>${escapeHTML(mov.deudor)}</strong></td><td>${escapeHTML(mov.concepto)}</td><td>${sim}</td><td>${btnA} <button class="btn-borrar" style="padding:3px; font-size:0.8em; margin-left:5px;" onclick="${mov.esVirtual ? `darDeBajaServicio('${mov.idGrupo}')` : `borrarMovimientoReal('${mov.idGrupo}')`}">X</button></td></tr>`;
+        return `<tr><td>${ff}</td><td><strong>${escapeHTML(mov.deudor)}</strong></td><td>${escapeHTML(mov.concepto)}</td><td>${sim}</td><td>${btnA} <button class="btn-borrar" style="padding:3px; font-size:0.8em; margin-left:5px;" onclick="${mov.esVirtual ? `darDeBajaServicio('${mov.idGrupo}')` : `borrarMovimientoReal('${mov.idGrupo}')`}">X</button></td></tr>`;
+    };
 
-        if(esDiario) tbDiaria.innerHTML += htmlRow; else tbFija.innerHTML += htmlRow;
-    });
+    let deudasDiariasArr = todasLasDeudas.filter(mov => mov.metodo === "EN_EL_ACTO");
+    let deudasFijasArr = todasLasDeudas.filter(mov => mov.metodo !== "EN_EL_ACTO");
+    deudasDiariasArr.sort((a, b) => (ordenDiarias.ascendente ? 1 : -1) * compararValores(a.fecha, b.fecha));
+    deudasFijasArr.sort((a, b) => (ordenFijas.ascendente ? 1 : -1) * compararValores(a.fecha, b.fecha));
+
+    let tbDiaria = document.getElementById('tablaDeudasDiarias'); tbDiaria.innerHTML = '';
+    deudasDiariasArr.forEach(mov => { tbDiaria.innerHTML += filaHtml(mov); });
+    let tbFija = document.getElementById('tablaDeudasFijas'); tbFija.innerHTML = '';
+    deudasFijasArr.forEach(mov => { tbFija.innerHTML += filaHtml(mov); });
 
     let gridDeudas = document.getElementById('gridResumenDeudas'); gridDeudas.innerHTML = '';
     for(let p in totDiario) {
