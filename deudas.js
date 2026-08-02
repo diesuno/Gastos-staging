@@ -7,6 +7,7 @@ import { mostrarConfirmacion, mostrarPrompt, mostrarAlerta } from './modales.js'
 import { actualizarApp } from './render.js';
 import { guardarDatosEnNube } from './auth.js';
 import { obtenerTodasLasDeudasPendientes } from './flujoMensual.js';
+import { obtenerKeyPeriodoDeFecha } from './periodo.js';
 
 export async function liquidarDeudaIndividual(idMov) {
     let mov = estadoApp.todosLosMovimientos.find(m => m.id === idMov) || estadoApp.movimientosMesGlobal.find(m => m.id === idMov);
@@ -39,13 +40,21 @@ export async function liquidarDeudaGlobal(persona, neto, tipoPagar) {
     let mInput = await mostrarPrompt(`Estás por saldar deudas [${tipoPagar}] de ${persona}.\nIngresá el importe exacto:`, Math.abs(neto));
     if(!mInput) return; let mReal = parseFloat(mInput); if(isNaN(mReal) || mReal <= 0) return;
 
-    // Saldamos entre TODAS las deudas pendientes con esa persona, sin
-    // importar el mes en que se originaron (igual que en la pantalla).
+    // Saldamos entre las deudas pendientes con esa persona: las "Diarias"
+    // (En el Acto) sin importar el mes en que se originaron, pero las
+    // "Fijas" (Tarjeta/Servicio) solo las del mes que está filtrado arriba
+    // — se devengan mes a mes como cargos separados.
+    let sel = document.getElementById('filtroMesAnio'); let [aSel, mSel] = sel.value.split('-').map(Number);
+    let keySel = `${aSel}-${(mSel + 1).toString().padStart(2, '0')}`;
     let todasLasDeudas = obtenerTodasLasDeudasPendientes();
 
     todasLasDeudas.forEach(m => {
         if(m.deudor === persona) {
-            let condFiltro = (tipoPagar === "TODO") || (tipoPagar === "DIARIO" && m.metodo === "EN_EL_ACTO") || (tipoPagar === "FIJO" && m.metodo !== "EN_EL_ACTO");
+            let esDiario = (m.metodo === "EN_EL_ACTO");
+            let esDelMesFiltrado = obtenerKeyPeriodoDeFecha(m.fecha) === keySel;
+            let condFiltro = (tipoPagar === "TODO" && (esDiario || esDelMesFiltrado))
+                || (tipoPagar === "DIARIO" && esDiario)
+                || (tipoPagar === "FIJO" && !esDiario && esDelMesFiltrado);
             if (condFiltro) {
                 if (m.esVirtual) { let s = estadoApp.suscripciones.find(x => x.id === m.idGrupo); if(s) { if(!s.pagosAmigo) s.pagosAmigo = []; s.pagosAmigo.push(m.mesClave); } }
                 else { let r = estadoApp.todosLosMovimientos.find(x => x.id === m.id); if(r) r.estado = "Saldado"; }

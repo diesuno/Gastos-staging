@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.1.0'; // Fix: Cuentas por Cobrar ahora muestra TODAS las deudas pendientes, no solo las del mes seleccionado
+const CACHE_NAME = 'finanzas-v10.2.0'; // Ajuste: Diarias suma todo lo pendiente, Fijas (Tarjeta/Servicio) solo el mes filtrado
 const urlsToCache = [
   './',
   './index.html',

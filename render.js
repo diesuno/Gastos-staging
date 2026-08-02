@@ -7,6 +7,7 @@ import { calcularFlujoDeMes, obtenerTodasLasDeudasPendientes } from './flujoMens
 import { reconstruirHistorialPesos } from './cierreMensual.js';
 import { renderizarGrafico, seriesGrafico } from './grafico.js';
 import { guardarDatosEnNube } from './auth.js';
+import { obtenerKeyPeriodoDeFecha } from './periodo.js';
 
 // ==========================================
 // 🔀 ORDENAMIENTO Y FILTROS DE TABLAS
@@ -332,16 +333,20 @@ export function actualizarFiltrosDetalle() {
 
 function actualizarPestañaCuentasCobrar(esAvanzado) {
     let sel = document.getElementById('filtroMesAnio'); if(!sel || !sel.value) return;
+    let [aSel, mSel] = sel.value.split('-').map(Number);
+    let keySel = `${aSel}-${(mSel + 1).toString().padStart(2, '0')}`;
 
-    // Cuentas por Cobrar muestra TODAS las deudas pendientes, sin importar
-    // el mes/período seleccionado arriba — una deuda no "vence" ni desaparece
-    // sola con el paso de los meses, sigue apareciendo hasta que se salda.
-    let todasLasDeudas = obtenerTodasLasDeudasPendientes();
+    // Cuentas por Cobrar junta TODAS las deudas pendientes (una deuda no
+    // "vence" con el paso de los meses), pero eso solo aplica a las
+    // "Diarias" (En el Acto). Las "Fijas" (Tarjeta/Servicio) se devengan mes
+    // a mes como cargos separados — cada mes es su propio cargo — así que
+    // ahí sí importa mirar solo el mes que tenés filtrado arriba.
+    let todasLasDeudasPendientes = obtenerTodasLasDeudasPendientes();
 
     if (!esAvanzado) {
         document.getElementById('thFechaDeudasBasicas').innerHTML = `Fecha${iconoOrden('deudasBasicas', 'fecha')}`;
         let ordenBasicas = ordenTablas.deudasBasicas;
-        let filasBasicas = [...todasLasDeudas].sort((a, b) => (ordenBasicas.ascendente ? 1 : -1) * compararValores(a.fecha, b.fecha));
+        let filasBasicas = [...todasLasDeudasPendientes].sort((a, b) => (ordenBasicas.ascendente ? 1 : -1) * compararValores(a.fecha, b.fecha));
 
         let tbBasica = document.getElementById('tablaDeudasBasicas'); tbBasica.innerHTML = '';
         filasBasicas.forEach(mov => {
@@ -359,18 +364,17 @@ function actualizarPestañaCuentasCobrar(esAvanzado) {
     let ordenDiarias = ordenTablas.deudasDiarias;
     let ordenFijas = ordenTablas.deudasFijas;
 
+    let deudasDiariasArr = todasLasDeudasPendientes.filter(mov => mov.metodo === "EN_EL_ACTO");
+    let deudasFijasArr = todasLasDeudasPendientes.filter(mov => mov.metodo !== "EN_EL_ACTO" && obtenerKeyPeriodoDeFecha(mov.fecha) === keySel);
+
     let totDiario = {}; let totFijo = {};
     estadoApp.listaAmigos.forEach(am => { totDiario[am] = 0; totFijo[am] = 0; });
 
-    // Los totales por persona se calculan sobre TODAS las deudas (sin
-    // importar el orden en que después se muestren las filas).
-    todasLasDeudas.forEach(mov => {
-        let esDiario = (mov.metodo === "EN_EL_ACTO");
-        if(totDiario[mov.deudor] !== undefined) {
-            if(esDiario) totDiario[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto;
-            else totFijo[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto;
-        }
-    });
+    // Los totales por persona se calculan sobre lo que efectivamente se va a
+    // mostrar en cada tabla (Diarias: todo lo pendiente; Fijas: solo el mes
+    // filtrado), no sobre el orden en que después se muestren las filas.
+    deudasDiariasArr.forEach(mov => { if(totDiario[mov.deudor] !== undefined) totDiario[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto; });
+    deudasFijasArr.forEach(mov => { if(totFijo[mov.deudor] !== undefined) totFijo[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto; });
 
     let filaHtml = (mov) => {
         let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
@@ -379,8 +383,6 @@ function actualizarPestañaCuentasCobrar(esAvanzado) {
         return `<tr><td>${ff}</td><td><strong>${escapeHTML(mov.deudor)}</strong></td><td>${escapeHTML(mov.concepto)}</td><td>${sim}</td><td>${btnA} <button class="btn-borrar" style="padding:3px; font-size:0.8em; margin-left:5px;" onclick="${mov.esVirtual ? `darDeBajaServicio('${mov.idGrupo}')` : `borrarMovimientoReal('${mov.idGrupo}')`}">X</button></td></tr>`;
     };
 
-    let deudasDiariasArr = todasLasDeudas.filter(mov => mov.metodo === "EN_EL_ACTO");
-    let deudasFijasArr = todasLasDeudas.filter(mov => mov.metodo !== "EN_EL_ACTO");
     deudasDiariasArr.sort((a, b) => (ordenDiarias.ascendente ? 1 : -1) * compararValores(a.fecha, b.fecha));
     deudasFijasArr.sort((a, b) => (ordenFijas.ascendente ? 1 : -1) * compararValores(a.fecha, b.fecha));
 
