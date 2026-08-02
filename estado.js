@@ -43,6 +43,9 @@ export const estadoApp = {
     historialPesosPorMes: {},
 
     listaAmigos: [],
+    // Nombres de tarjetas de crédito que fuiste cargando, para poder
+    // reutilizarlas al elegir con qué tarjeta pagaste (ver movimientos.js).
+    listaTarjetas: [],
     // "diaCobro" es 0 por defecto (mes calendario de siempre). Si la persona
     // activa el ciclo de cobro personalizado en Mi Perfil, pasa a ser el día
     // del mes en que arranca su "mes" (1-28) — ver periodo.js.

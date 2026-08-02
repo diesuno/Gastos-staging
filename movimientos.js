@@ -32,9 +32,28 @@ export function evaluarCamposDinamicosGasto() {
     let m = document.getElementById('inputMetodoPago').value;
     document.getElementById('boxPlanCuotas').style.display = (m === "CREDITO") ? "block" : "none";
     document.getElementById('boxDebitoAuto').style.display = (m === "SERVICIO") ? "block" : "none";
+    document.getElementById('boxTarjeta').style.display = (m === "CREDITO") ? "block" : "none";
+    if (m === "CREDITO") actualizarSelectTarjetasDisplay();
 
     if(m !== "CREDITO") document.getElementById('inputCuotas').value = "1";
     toggleSelectAmigo();
+}
+
+// --- TARJETAS REUTILIZABLES (mismo patrón que la lista de amigos) ---
+export function actualizarSelectTarjetasDisplay() {
+    let s = document.getElementById('inputTarjetaSeleccionada');
+    let valorPrevio = s.value;
+    s.innerHTML = '<option value="">Elegir tarjeta...</option>';
+    estadoApp.listaTarjetas.forEach(t => { let o = document.createElement('option'); o.value = t; o.text = t; s.appendChild(o); });
+    let optNueva = document.createElement('option'); optNueva.value = '__NUEVA__'; optNueva.text = '+ Agregar una nueva';
+    s.appendChild(optNueva);
+    // Si la tarjeta que tenía seleccionada sigue existiendo, la mantenemos.
+    if (estadoApp.listaTarjetas.includes(valorPrevio)) s.value = valorPrevio;
+}
+
+export function toggleNuevaTarjeta() {
+    let esNueva = document.getElementById('inputTarjetaSeleccionada').value === '__NUEVA__';
+    document.getElementById('boxNuevaTarjeta').style.display = esNueva ? 'block' : 'none';
 }
 
 export function toggleSelectAmigo() {
@@ -55,6 +74,47 @@ export function actualizarSelectAmigosDisplay() {
     estadoApp.listaAmigos.forEach(am => { let o = document.createElement('option'); o.value = am; o.text = am; s.appendChild(o); });
 }
 
+// --- EDITAR UN MOVIMIENTO YA CARGADO ---
+// Por ahora solo se puede editar texto, fecha y monto, y solo en movimientos
+// "En el Acto" reales (no cuotas de tarjeta ni servicios recurrentes — esos
+// todavía no tienen pensada su lógica de edición acá).
+let idMovimientoEnEdicion = null;
+
+export function abrirModalEditarMovimiento(id) {
+    let mov = estadoApp.todosLosMovimientos.find(m => m.id === id);
+    if (!mov) return;
+    idMovimientoEnEdicion = id;
+    document.getElementById('editMovTexto').value = mov.concepto;
+    document.getElementById('editMovFecha').value = mov.fecha;
+    document.getElementById('editMovMonto').value = mov.monto;
+    document.getElementById('modal-editar-movimiento').style.display = 'flex';
+}
+
+export function cerrarModalEditarMovimiento() {
+    document.getElementById('modal-editar-movimiento').style.display = 'none';
+    idMovimientoEnEdicion = null;
+}
+
+export function guardarEdicionMovimiento() {
+    if (!idMovimientoEnEdicion) return;
+    let mov = estadoApp.todosLosMovimientos.find(m => m.id === idMovimientoEnEdicion);
+    if (!mov) return;
+
+    let texto = document.getElementById('editMovTexto').value.trim();
+    let fecha = document.getElementById('editMovFecha').value;
+    let monto = parseFloat(document.getElementById('editMovMonto').value);
+    if (!texto) return mostrarAlerta("Ingresá un texto");
+    if (!fecha) return mostrarAlerta("Elegí una fecha");
+    if (!monto || monto <= 0) return mostrarAlerta("Ingresá un monto válido");
+
+    mov.concepto = texto;
+    mov.fecha = fecha;
+    mov.monto = monto;
+
+    cerrarModalEditarMovimiento();
+    actualizarApp(); guardarDatosEnNube();
+}
+
 export function agregarMovimiento() {
     let montoTotal = parseFloat(document.getElementById('inputMonto').value);
     let tipo = document.getElementById('inputTipo').value;
@@ -68,6 +128,21 @@ export function agregarMovimiento() {
     let debAuto = esAvanzado ? document.getElementById('inputDebitoAuto').value : "NO";
     let dividir = esAvanzado ? document.getElementById('inputDividir').value : "NO";
     let amigo = esAvanzado ? document.getElementById('inputAmigoAsignado').value : "";
+
+    // Tarjeta usada (solo aplica si el método es Crédito). Si eligió "+
+    // Agregar una nueva", la creamos y la sumamos a la lista reutilizable.
+    let tarjeta = "";
+    if (esAvanzado && metodoP === "CREDITO") {
+        let seleccion = document.getElementById('inputTarjetaSeleccionada').value;
+        if (seleccion === "__NUEVA__") {
+            let nombreNueva = document.getElementById('inputNuevaTarjeta').value.trim();
+            if (!nombreNueva) return mostrarAlerta("Escribí el nombre de la tarjeta nueva");
+            if (!estadoApp.listaTarjetas.includes(nombreNueva)) estadoApp.listaTarjetas.push(nombreNueva);
+            tarjeta = nombreNueva;
+        } else {
+            tarjeta = seleccion;
+        }
+    }
 
     if(dividir !== "NO" && !amigo) return mostrarAlerta("Elegí una persona para dividir");
 
@@ -90,7 +165,7 @@ export function agregarMovimiento() {
 
             let objBase = {
                 id: generarId(), idGrupo: idGrupoPrincipal, monto: montoPorCuota, tipo: tipo, concepto: conceptoF,
-                fecha: fechaF, metodo: metodoP, cuotaActual: i+1, cuotasTotales: cuotas,
+                fecha: fechaF, metodo: metodoP, cuotaActual: i+1, cuotasTotales: cuotas, tarjeta: tarjeta,
                 deudaRestante: montoTotal - (montoPorCuota * (i + 1)), esVirtual: false
             };
 
@@ -153,5 +228,6 @@ export function agregarMovimiento() {
         }
     }
     document.getElementById('inputMonto').value = ""; document.getElementById('inputConcepto').value = "";
+    document.getElementById('inputNuevaTarjeta').value = "";
     actualizarApp(); guardarDatosEnNube();
 }

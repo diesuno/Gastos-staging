@@ -78,6 +78,22 @@
     </div>
 </div>
 
+<!-- MODAL EDITAR MOVIMIENTO -->
+<div id="modal-editar-movimiento" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:440px; text-align:left;">
+        <h2 style="margin-top:0; text-align:center;">✏️ Editar Movimiento</h2>
+        <div class="form-grid">
+            <div class="form-group"><label for="editMovTexto">Texto</label><input type="text" id="editMovTexto"></div>
+            <div class="form-group"><label for="editMovFecha">Fecha</label><input type="date" id="editMovFecha"></div>
+            <div class="form-group"><label for="editMovMonto">Monto</label><input type="number" step="any" id="editMovMonto"></div>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+            <button class="btn-secundario" onclick="cerrarModalEditarMovimiento()">Cancelar</button>
+            <button class="btn-verde" onclick="guardarEdicionMovimiento()">Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL EDITAR SERVICIO -->
 <div id="modal-editar-servicio" class="modal-overlay" style="display:none;">
     <div class="modal-box" style="max-width:480px; text-align:left;">
@@ -303,6 +319,14 @@
                     </select>
                 </div>
 
+                <div class="form-group avanzado-only" id="boxTarjeta" style="display:none;"><label for="inputTarjetaSeleccionada">Tarjeta</label>
+                    <select id="inputTarjetaSeleccionada" onchange="toggleNuevaTarjeta()">
+                        <option value="">Elegir tarjeta...</option>
+                        <option value="__NUEVA__">+ Agregar una nueva</option>
+                    </select>
+                </div>
+                <div class="form-group avanzado-only" id="boxNuevaTarjeta" style="display:none;"><label for="inputNuevaTarjeta">Nombre de la tarjeta nueva</label><input type="text" id="inputNuevaTarjeta" placeholder="Ej: Visa Santander"></div>
+
                 <div class="form-group avanzado-only" id="boxDebitoAuto" style="display:none;"><label for="inputDebitoAuto">¿Débito Automático?</label>
                     <select id="inputDebitoAuto">
                         <option value="NO">No</option>
@@ -358,15 +382,39 @@
         <h2>🧾 Análisis de Obligaciones del Mes</h2>
 
         <h3 style="color:#1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">💳 Tarjetas de Crédito (Cuotas a pagar este mes)</h3>
+        <div class="form-section" style="padding:16px;">
+            <div class="form-grid" style="align-items:end;">
+                <div class="form-group"><label for="buscarCreditos">Buscar</label><input type="text" id="buscarCreditos" placeholder="Buscar por texto..." oninput="aplicarFiltrosCreditos()"></div>
+                <div class="form-group"><label for="filtroTarjeta">Tarjeta</label><select id="filtroTarjeta" onchange="aplicarFiltrosCreditos()"><option value="TODAS">Todas</option></select></div>
+                <button class="btn-secundario" style="height:46px;" onclick="limpiarFiltrosCreditos()">Limpiar Filtros</button>
+            </div>
+        </div>
         <table>
-            <thead><tr><th>Texto</th><th>Cuota Mes</th><th>Valor Cuota</th><th>Saldo Restante Deuda</th><th>Compartido</th><th>Deuda Asoc.</th><th>Acción</th></tr></thead>
+            <thead><tr>
+                <th id="thTextoCreditos" style="cursor:pointer;" onclick="ordenarTabla('detalleCreditos','texto','texto')">Texto</th>
+                <th>Cuota Mes</th>
+                <th id="thMontoCreditos" style="cursor:pointer;" onclick="ordenarTabla('detalleCreditos','monto','numero')">Valor Cuota</th>
+                <th>Saldo Restante Deuda</th>
+                <th id="thTarjetaCreditos" style="cursor:pointer;" onclick="ordenarTabla('detalleCreditos','tarjeta','texto')">Tarjeta</th>
+                <th>Compartido</th><th>Deuda Asoc.</th><th>Acción</th>
+            </tr></thead>
             <tbody id="tablaCreditos"></tbody>
         </table>
         <div class="totales-footer" id="lblTotalCreditos">Total Tarjetas: $0.00</div>
 
         <h3 style="color:#1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 30px;">🔌 Servicios y Suscripciones Mensuales</h3>
+        <div class="form-section" style="padding:16px;">
+            <div class="form-grid" style="align-items:end;">
+                <div class="form-group"><label for="buscarServicios">Buscar</label><input type="text" id="buscarServicios" placeholder="Buscar por texto..." oninput="aplicarFiltrosCreditos()"></div>
+            </div>
+        </div>
         <table>
-            <thead><tr><th>Servicio</th><th>Débito Auto.</th><th>Valor a Pagar</th><th>Variación vs Mes Anterior</th><th>Compartido</th><th>Deuda Asoc.</th><th>Acción</th></tr></thead>
+            <thead><tr>
+                <th id="thTextoServicios" style="cursor:pointer;" onclick="ordenarTabla('detalleServicios','texto','texto')">Servicio</th>
+                <th>Débito Auto.</th>
+                <th id="thMontoServicios" style="cursor:pointer;" onclick="ordenarTabla('detalleServicios','monto','numero')">Valor a Pagar</th>
+                <th>Variación vs Mes Anterior</th><th>Compartido</th><th>Deuda Asoc.</th><th>Acción</th>
+            </tr></thead>
             <tbody id="tablaServicios"></tbody>
         </table>
         <div class="totales-footer" id="lblTotalServicios">Total Servicios: $0.00</div>

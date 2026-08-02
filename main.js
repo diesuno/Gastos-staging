@@ -27,7 +27,8 @@ import {
 
 import {
     evaluarCamposDinamicosGasto, toggleSelectAmigo, crearPersonaDeuda,
-    agregarMovimiento
+    agregarMovimiento, toggleNuevaTarjeta, actualizarSelectTarjetasDisplay,
+    abrirModalEditarMovimiento, cerrarModalEditarMovimiento, guardarEdicionMovimiento
 } from './movimientos.js';
 
 import {
@@ -46,7 +47,7 @@ import {
 
 import { toggleSerieGrafico, setMesesAMostrar } from './grafico.js';
 
-import { inicializarSelectorHistorico, cambiarPestaña, actualizarApp, actualizarFiltrosDetalle, ordenarTabla, aplicarFiltrosMovimientos, limpiarFiltrosMovimientos } from './render.js';
+import { inicializarSelectorHistorico, cambiarPestaña, actualizarApp, actualizarFiltrosDetalle, ordenarTabla, aplicarFiltrosMovimientos, limpiarFiltrosMovimientos, aplicarFiltrosCreditos, limpiarFiltrosCreditos } from './render.js';
 
 // --- INICIALIZACIÓN DE CAMPOS DE FECHA ---
 document.getElementById('inputFecha').valueAsDate = fechaActual;
@@ -75,7 +76,7 @@ async function resetearApp() {
             estadoApp.patrimonio = { pesos: 0, dolares: 0 }; estadoApp.inversiones = [];
             estadoApp.sp500 = { nominales: 0 }; estadoApp.historialInversiones = [];
             estadoApp.historialMensual = {}; estadoApp.historialPesosPorMes = {};
-            estadoApp.listaAmigos = [];
+            estadoApp.listaAmigos = []; estadoApp.listaTarjetas = [];
             estadoApp.perfilUsuario.modo = "";
             guardarDatosEnNube(); actualizarApp(); location.reload();
         }
@@ -114,6 +115,11 @@ window.cambiarPestaña = cambiarPestaña;
 window.actualizarApp = actualizarApp;
 window.evaluarCamposDinamicosGasto = evaluarCamposDinamicosGasto;
 window.agregarMovimiento = agregarMovimiento;
+window.toggleNuevaTarjeta = toggleNuevaTarjeta;
+window.actualizarSelectTarjetasDisplay = actualizarSelectTarjetasDisplay;
+window.abrirModalEditarMovimiento = abrirModalEditarMovimiento;
+window.cerrarModalEditarMovimiento = cerrarModalEditarMovimiento;
+window.guardarEdicionMovimiento = guardarEdicionMovimiento;
 window.toggleSelectAmigo = toggleSelectAmigo;
 window.crearPersonaDeuda = crearPersonaDeuda;
 window.resetearApp = resetearApp;
@@ -141,3 +147,5 @@ window.actualizarFiltrosDetalle = actualizarFiltrosDetalle;
 window.ordenarTabla = ordenarTabla;
 window.aplicarFiltrosMovimientos = aplicarFiltrosMovimientos;
 window.limpiarFiltrosMovimientos = limpiarFiltrosMovimientos;
+window.aplicarFiltrosCreditos = aplicarFiltrosCreditos;
+window.limpiarFiltrosCreditos = limpiarFiltrosCreditos;

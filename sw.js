@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.3.0'; // Pagado en Acto y Obligaciones muestran % de ingresos; Obligaciones compara contra el mes anterior
+const CACHE_NAME = 'finanzas-v10.4.0'; // Editar movimientos (En el Acto), orden/filtro en Detalle Gastos, tarjetas reutilizables
 const urlsToCache = [
   './',
   './index.html',

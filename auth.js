@@ -168,6 +168,7 @@ export function cargarDatosDesdeNube(uid) {
             estadoApp.patrimonio = data.patrimonio || { pesos: 0, dolares: 0 };
             estadoApp.inversiones = data.inversiones || [];
             estadoApp.listaAmigos = data.listaAmigos || [];
+            estadoApp.listaTarjetas = data.listaTarjetas || [];
 
             if (data.perfilUsuario) {
                 estadoApp.perfilUsuario = data.perfilUsuario;
@@ -225,7 +226,7 @@ export function cargarDatosDesdeNube(uid) {
 export function guardarDatosEnNube() {
     if(auth.currentUser) db.collection("usuarios").doc(auth.currentUser.uid).set({
         todosLosMovimientos: estadoApp.todosLosMovimientos, suscripciones: estadoApp.suscripciones,
-        patrimonio: estadoApp.patrimonio, inversiones: estadoApp.inversiones, listaAmigos: estadoApp.listaAmigos, perfilUsuario: estadoApp.perfilUsuario,
+        patrimonio: estadoApp.patrimonio, inversiones: estadoApp.inversiones, listaAmigos: estadoApp.listaAmigos, listaTarjetas: estadoApp.listaTarjetas, perfilUsuario: estadoApp.perfilUsuario,
         sp500: estadoApp.sp500, historialInversiones: estadoApp.historialInversiones,
         historialMensual: estadoApp.historialMensual,
         cotizacionCedear: estadoApp.mercado.spy_ars
