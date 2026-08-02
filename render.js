@@ -118,10 +118,28 @@ export function actualizarApp() {
     let dashUI = document.getElementById('dashboard-dinamico');
 
     if (esAvanzado) {
+        let pctEnActo = ing > 0 ? ((gastosEnActo / ing) * 100).toFixed(1) : '0.0';
+        let totalObligaciones = gastosCredito + gastosServicio;
+        let pctObligaciones = ing > 0 ? ((totalObligaciones / ing) * 100).toFixed(1) : '0.0';
+
+        // Comparamos Obligaciones contra el mismo total del mes anterior, para
+        // mostrar si subió o bajó y en qué porcentaje.
+        let mAnt = mSel - 1, aAnt = aSel;
+        if (mAnt < 0) { mAnt = 11; aAnt -= 1; }
+        let flujoAnterior = calcularFlujoDeMes(aAnt, mAnt);
+        let totalObligacionesAnt = flujoAnterior.gastosCredito + flujoAnterior.gastosServicio;
+        let varObligacionesTxt = 'Sin datos del mes anterior';
+        if (totalObligacionesAnt > 0) {
+            let diffPct = ((totalObligaciones - totalObligacionesAnt) / totalObligacionesAnt) * 100;
+            if (diffPct > 0.05) varObligacionesTxt = `<span style="color:#ef4444; font-weight:600;">▲ +${diffPct.toFixed(1)}% vs. mes anterior</span>`;
+            else if (diffPct < -0.05) varObligacionesTxt = `<span style="color:#10b981; font-weight:600;">▼ ${diffPct.toFixed(1)}% vs. mes anterior</span>`;
+            else varObligacionesTxt = `<span style="color:#94a3b8; font-weight:600;">= Igual al mes anterior</span>`;
+        }
+
         dashUI.innerHTML = `
             <div class="card ingreso"><h3>Ingresos Totales</h3><p>$${ing.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p></div>
-            <div class="card gasto" style="background:#fffbeb; border-left-color:#f59e0b;"><h3>Pagado (En Acto)</h3><p style="color:#d97706;">$${gastosEnActo.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p><span class="porcentaje">Dinero que ya salió hoy.</span></div>
-            <div class="card gasto obligaciones-card"><h3>Obligaciones (Cuotas+Serv)</h3><p>$${(gastosCredito + gastosServicio).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p><span class="porcentaje">Pasá el mouse para ver el detalle</span>
+            <div class="card gasto" style="background:#fffbeb; border-left-color:#f59e0b;"><h3>Pagado (En Acto)</h3><p style="color:#d97706;">$${gastosEnActo.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p><span class="porcentaje">${pctEnActo}% de tus ingresos</span></div>
+            <div class="card gasto obligaciones-card"><h3>Obligaciones (Cuotas+Serv)</h3><p>$${totalObligaciones.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p><span class="porcentaje">${pctObligaciones}% de tus ingresos</span><br><span class="porcentaje">${varObligacionesTxt}</span>
                 <div class="obligaciones-tooltip">
                     <div>💳 Cuotas (Tarjeta): <b>$${gastosCredito.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</b></div>
                     <div>🔌 Servicios: <b>$${gastosServicio.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</b></div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.2.0'; // Ajuste: Diarias suma todo lo pendiente, Fijas (Tarjeta/Servicio) solo el mes filtrado
+const CACHE_NAME = 'finanzas-v10.3.0'; // Pagado en Acto y Obligaciones muestran % de ingresos; Obligaciones compara contra el mes anterior
 const urlsToCache = [
   './',
   './index.html',
