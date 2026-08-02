@@ -8,7 +8,7 @@
 // quedar desincronizados entre sí.
 import { estadoApp } from './estado.js';
 import { generarId } from './utilidades.js';
-import { obtenerRangoPeriodo, obtenerKeyPeriodoDeFecha } from './periodo.js';
+import { obtenerRangoPeriodo, obtenerKeyPeriodoDeFecha, obtenerKeyPeriodoDeDate } from './periodo.js';
 
 // Devuelve los movimientos "reales" de un mes puntual (aSel = año, mSel = mes
 // 0-indexado) más los "virtuales" generados por servicios recurrentes activos
@@ -72,6 +72,71 @@ export function obtenerMovimientosDeMes(aSel, mSel) {
     }
 
     return filtrados.concat(movsVirtuales);
+}
+
+// Calcula la deuda que genera una suscripción en un período puntual, según
+// cómo esté dividida — se usa tanto para el mes que se está viendo
+// (obtenerMovimientosDeMes) como para juntar TODAS las deudas pendientes de
+// todos los períodos (obtenerTodasLasDeudasPendientes).
+function calcularDeudaSuscripcionEnPeriodo(susc, keyPeriodo) {
+    let montoActivo = 0; let diffKeys = Object.keys(susc.montosPorMes).sort();
+    for (let key of diffKeys) { if (key <= keyPeriodo) montoActivo = susc.montosPorMes[key]; }
+    if (montoActivo === 0) return null;
+
+    if (susc.dividir === "PAGUE_50_INTEGRO") return { monto: montoActivo / 2, sentido: "A_FAVOR" };
+    if (susc.dividir === "PAGO_OTRO_50") return { monto: montoActivo / 2, sentido: "EN_CONTRA" };
+    if (susc.dividir === "PAGUE_100_DEUDA") return { monto: montoActivo, sentido: "A_FAVOR" };
+    if (susc.dividir === "PAGO_OTRO_100_DEUDA") return { monto: montoActivo, sentido: "EN_CONTRA" };
+    return null;
+}
+
+// Una deuda pendiente no "vence" — sigue apareciendo hasta que se salda, sin
+// importar en qué mes se originó ni qué período estés mirando ahora. Por eso
+// Cuentas por Cobrar junta TODAS las deudas pendientes (reales, más las
+// virtuales que generan las suscripciones en cada período desde que están
+// activas), en vez de limitarse al período actualmente seleccionado.
+export function obtenerTodasLasDeudasPendientes() {
+    let reales = estadoApp.todosLosMovimientos.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente");
+
+    let virtuales = [];
+    if (estadoApp.perfilUsuario.modo === "AVANZADO") {
+        let hoy = new Date();
+        let keyHoy = obtenerKeyPeriodoDeDate(hoy);
+
+        estadoApp.suscripciones.forEach(susc => {
+            if (!susc.dividir || susc.dividir === "NO") return; // no genera deuda con nadie
+
+            let keyAlta = obtenerKeyPeriodoDeFecha(susc.fechaAlta);
+            let [a, m] = keyAlta.split('-').map(Number);
+            let cursor = new Date(a, m - 1, 1);
+            let [aHoy, mHoy] = keyHoy.split('-').map(Number);
+            let finCursor = new Date(aHoy, mHoy - 1, 1);
+
+            while (cursor <= finCursor) {
+                let aC = cursor.getFullYear(), mC = cursor.getMonth();
+                let keyC = `${aC}-${(mC + 1).toString().padStart(2, '0')}`;
+                if (susc.mesBaja && keyC >= susc.mesBaja) break;
+
+                let deuda = calcularDeudaSuscripcionEnPeriodo(susc, keyC);
+                if (deuda) {
+                    let yaPagado = (susc.pagosAmigo && susc.pagosAmigo.includes(keyC));
+                    if (!yaPagado) {
+                        let { inicio } = obtenerRangoPeriodo(aC, mC);
+                        let fechaVMov = `${inicio.getFullYear()}-${(inicio.getMonth() + 1).toString().padStart(2, '0')}-${inicio.getDate().toString().padStart(2, '0')}`;
+                        virtuales.push({
+                            id: susc.id + "_deuda_" + keyC, idGrupo: susc.id, monto: deuda.monto, tipo: "Cuenta Cobrar",
+                            concepto: deuda.sentido === "A_FAVOR" ? `Te debe por: ${susc.concepto}` : `Le debés por: ${susc.concepto}`,
+                            fecha: fechaVMov, deudor: susc.amigo, sentido: deuda.sentido, estado: "Pendiente", metodo: "SERVICIO",
+                            esVirtual: true, mesClave: keyC
+                        });
+                    }
+                }
+                cursor.setMonth(cursor.getMonth() + 1);
+            }
+        });
+    }
+
+    return [...reales, ...virtuales];
 }
 
 // Calcula ingresos, gastos por método, y los 3 "disponibles" posibles de un

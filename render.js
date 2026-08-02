@@ -3,11 +3,10 @@
 // ==========================================
 import { estadoApp, nombresMeses, fechaActual } from './estado.js';
 import { escapeHTML, agruparMovimientosPorGrupo, precioNominalSp500Usd, describirMovimientoInversion, obtenerMontoYSimboloParaMostrar } from './utilidades.js';
-import { calcularFlujoDeMes } from './flujoMensual.js';
+import { calcularFlujoDeMes, obtenerTodasLasDeudasPendientes } from './flujoMensual.js';
 import { reconstruirHistorialPesos } from './cierreMensual.js';
 import { renderizarGrafico, seriesGrafico } from './grafico.js';
 import { guardarDatosEnNube } from './auth.js';
-import { obtenerKeyPeriodoDeFecha } from './periodo.js';
 
 // ==========================================
 // 🔀 ORDENAMIENTO Y FILTROS DE TABLAS
@@ -333,12 +332,11 @@ export function actualizarFiltrosDetalle() {
 
 function actualizarPestañaCuentasCobrar(esAvanzado) {
     let sel = document.getElementById('filtroMesAnio'); if(!sel || !sel.value) return;
-    let [aSel, mSel] = sel.value.split('-').map(Number);
-    let keySel = `${aSel}-${(mSel + 1).toString().padStart(2, '0')}`;
 
-    let deudasHistoricasReales = estadoApp.todosLosMovimientos.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente" && obtenerKeyPeriodoDeFecha(m.fecha) === keySel);
-    let deudasVirtualesMes = estadoApp.movimientosMesGlobal.filter(m => m.tipo === "Cuenta Cobrar" && m.estado === "Pendiente" && m.esVirtual);
-    let todasLasDeudas = [...deudasHistoricasReales, ...deudasVirtualesMes];
+    // Cuentas por Cobrar muestra TODAS las deudas pendientes, sin importar
+    // el mes/período seleccionado arriba — una deuda no "vence" ni desaparece
+    // sola con el paso de los meses, sigue apareciendo hasta que se salda.
+    let todasLasDeudas = obtenerTodasLasDeudasPendientes();
 
     if (!esAvanzado) {
         document.getElementById('thFechaDeudasBasicas').innerHTML = `Fecha${iconoOrden('deudasBasicas', 'fecha')}`;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.0.0'; // Ciclo de cobro personalizado (día del mes distinto a 1), configurable en Mi Perfil
+const CACHE_NAME = 'finanzas-v10.1.0'; // Fix: Cuentas por Cobrar ahora muestra TODAS las deudas pendientes, no solo las del mes seleccionado
 const urlsToCache = [
   './',
   './index.html',
