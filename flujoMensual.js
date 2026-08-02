@@ -39,28 +39,21 @@ export function obtenerMovimientosDeMes(aSel, mSel) {
             let fechaVMov = `${inicio.getFullYear()}-${(inicio.getMonth()+1).toString().padStart(2,'0')}-${inicio.getDate().toString().padStart(2,'0')}`;
             let vMov = { id: susc.id + "_" + keyMes, idGrupo: susc.id, monto: montoActivo, tipo: susc.tipo, concepto: susc.concepto, fecha: fechaVMov, metodo: "SERVICIO", debito: susc.debito, dividir: susc.dividir, amigo: susc.amigo, esVirtual: true };
 
-            let registrarDeuda = false; let mDeuda = 0; let tDeuda = ""; let pushearVMov = true;
-            if (susc.dividir === "PAGUE_50_INTEGRO") {
-                // Pagué 50%: mi parte real es la mitad — la otra mitad no es
-                // mía, no se cuenta como gasto (queda solo en Cuentas por
-                // Cobrar hasta que me la devuelvan).
-                vMov.monto = montoActivo/2;
-                registrarDeuda = true; mDeuda = montoActivo/2; tDeuda = "A_FAVOR";
-            } else if (susc.dividir === "PAGO_OTRO_50") {
-                // Debo 50%: mi parte real es la mitad, y la debo — cuenta
-                // como obligación mía ya.
-                vMov.monto = montoActivo/2;
-                registrarDeuda = true; mDeuda = montoActivo/2; tDeuda = "EN_CONTRA";
-            } else if (susc.dividir === "PAGUE_100_DEUDA") {
-                // 0% es mío — no se registra ningún gasto, solo la Cuenta
-                // Cobrar (me deben el 100%).
-                pushearVMov = false;
-                registrarDeuda = true; mDeuda = montoActivo; tDeuda = "A_FAVOR";
-            } else if (susc.dividir === "PAGO_OTRO_100_DEUDA") {
-                // Debo 100%: es enteramente mío aunque lo pague el otro —
-                // cuenta como obligación mía completa.
-                registrarDeuda = true; mDeuda = montoActivo; tDeuda = "EN_CONTRA";
-            }
+            // "Mi parte" (lo que se registra como Gasto real) sale siempre de
+            // calcularMiParteSuscripcion(), para que el monto mostrado acá y
+            // el usado más adelante al comparar contra el mes anterior
+            // (variación) estén siempre en la misma unidad — antes se
+            // comparaba "mi mitad" contra "el monto completo" del mes
+            // anterior, dando variaciones de -50% que no eran reales.
+            let miParte = calcularMiParteSuscripcion(susc, keyMes);
+            let pushearVMov = miParte > 0;
+            vMov.monto = miParte;
+
+            let registrarDeuda = false; let mDeuda = 0; let tDeuda = "";
+            if (susc.dividir === "PAGUE_50_INTEGRO") { registrarDeuda = true; mDeuda = montoActivo/2; tDeuda = "A_FAVOR"; }
+            else if (susc.dividir === "PAGO_OTRO_50") { registrarDeuda = true; mDeuda = montoActivo/2; tDeuda = "EN_CONTRA"; }
+            else if (susc.dividir === "PAGUE_100_DEUDA") { registrarDeuda = true; mDeuda = montoActivo; tDeuda = "A_FAVOR"; }
+            else if (susc.dividir === "PAGO_OTRO_100_DEUDA") { registrarDeuda = true; mDeuda = montoActivo; tDeuda = "EN_CONTRA"; }
 
             if (pushearVMov) movsVirtuales.push(vMov);
 
@@ -72,6 +65,21 @@ export function obtenerMovimientosDeMes(aSel, mSel) {
     }
 
     return filtrados.concat(movsVirtuales);
+}
+
+// Calcula "mi parte" (lo que se registra como Gasto real, en la misma
+// unidad que se muestra en "Valor a Pagar") de una suscripción en un
+// período puntual, según cómo esté dividida. Se centraliza acá para que
+// tanto el monto del mes actual como el del mes anterior (al comparar la
+// variación) usen siempre el mismo criterio.
+export function calcularMiParteSuscripcion(susc, keyPeriodo) {
+    let montoActivo = 0; let diffKeys = Object.keys(susc.montosPorMes).sort();
+    for (let key of diffKeys) { if (key <= keyPeriodo) montoActivo = susc.montosPorMes[key]; }
+    if (montoActivo === 0) return 0;
+
+    if (susc.dividir === "PAGUE_50_INTEGRO" || susc.dividir === "PAGO_OTRO_50") return montoActivo / 2;
+    if (susc.dividir === "PAGUE_100_DEUDA") return 0;
+    return montoActivo; // "NO" (normal) o "PAGO_OTRO_100_DEUDA" (Debo 100%: es enteramente mío)
 }
 
 // Calcula la deuda que genera una suscripción en un período puntual, según

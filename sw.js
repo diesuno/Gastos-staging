@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.4.0'; // Editar movimientos (En el Acto), orden/filtro en Detalle Gastos, tarjetas reutilizables
+const CACHE_NAME = 'finanzas-v10.5.0'; // Fix importante: la variación de servicios comparaba "mi parte" contra el monto completo sin dividir
 const urlsToCache = [
   './',
   './index.html',

@@ -3,7 +3,7 @@
 // ==========================================
 import { estadoApp, nombresMeses, fechaActual } from './estado.js';
 import { escapeHTML, agruparMovimientosPorGrupo, precioNominalSp500Usd, describirMovimientoInversion, obtenerMontoYSimboloParaMostrar } from './utilidades.js';
-import { calcularFlujoDeMes, obtenerTodasLasDeudasPendientes } from './flujoMensual.js';
+import { calcularFlujoDeMes, obtenerTodasLasDeudasPendientes, calcularMiParteSuscripcion } from './flujoMensual.js';
 import { reconstruirHistorialPesos } from './cierreMensual.js';
 import { renderizarGrafico, seriesGrafico } from './grafico.js';
 import { guardarDatosEnNube } from './auth.js';
@@ -306,11 +306,16 @@ export function actualizarApp() {
             totalServMio += mov.montoTotalAgrupado;
             totalServCompartido += mov.montoAdeudado;
             let prevMonthDate = new Date(aSel, mSel - 1, 1);
+            let keyMesAnterior = `${prevMonthDate.getFullYear()}-${(prevMonthDate.getMonth()+1).toString().padStart(2,'0')}`;
             let montoPasado = null; let variacionHtml = "-";
             let suscObj = estadoApp.suscripciones.find(s => s.id === mov.idGrupo);
             if(suscObj) {
-                let dKeys = Object.keys(suscObj.montosPorMes).sort();
-                for (let key of dKeys) { let [kA, kM] = key.split('-').map(Number); if (new Date(kA, kM - 1, 1) <= prevMonthDate) montoPasado = suscObj.montosPorMes[key]; }
+                // "Mi parte" del mes anterior, en la MISMA unidad que se
+                // muestra ahora (antes se comparaba contra el monto completo
+                // sin dividir, lo que daba variaciones de -50% que no eran
+                // reales en servicios compartidos).
+                let parteAnterior = calcularMiParteSuscripcion(suscObj, keyMesAnterior);
+                if (parteAnterior > 0) montoPasado = parteAnterior;
             }
             if(montoPasado !== null) {
                 let diff = mov.montoTotalAgrupado - montoPasado;
