@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.8.0'; // Revertida la columna "Valor a Pagar (100%)" — Tarjetas vuelve a mostrar solo Valor Cuota
+const CACHE_NAME = 'finanzas-v10.9.0'; // Botón "Descargar Excel" en Cuentas por Cobrar (usa SheetJS, generado en el navegador)
 const urlsToCache = [
   './',
   './index.html',

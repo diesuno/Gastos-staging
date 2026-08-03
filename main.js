@@ -42,7 +42,8 @@ import {
     liquidarDeudaIndividual, liquidarDeudaGlobal,
     borrarMovimientoReal, darDeBajaServicio,
     abrirModalEditarServicio, toggleCamposModalEditarServicio,
-    cerrarModalEditarServicio, guardarEdicionServicio
+    cerrarModalEditarServicio, guardarEdicionServicio,
+    descargarExcelDeudas
 } from './deudas.js';
 
 import { toggleSerieGrafico, setMesesAMostrar } from './grafico.js';
@@ -129,6 +130,7 @@ window.abrirModalEditarServicio = abrirModalEditarServicio;
 window.toggleCamposModalEditarServicio = toggleCamposModalEditarServicio;
 window.cerrarModalEditarServicio = cerrarModalEditarServicio;
 window.guardarEdicionServicio = guardarEdicionServicio;
+window.descargarExcelDeudas = descargarExcelDeudas;
 window.liquidarDeudaIndividual = liquidarDeudaIndividual;
 window.liquidarDeudaGlobal = liquidarDeudaGlobal;
 

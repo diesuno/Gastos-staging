@@ -9,6 +9,31 @@ import { guardarDatosEnNube } from './auth.js';
 import { obtenerTodasLasDeudasPendientes } from './flujoMensual.js';
 import { obtenerKeyPeriodoDeFecha } from './periodo.js';
 
+// Arma un Excel (.xlsx) con el detalle de Cuentas por Cobrar, para poder
+// compartirlo. Se genera todo en el navegador con SheetJS (cargada en
+// index.html) — no hace falta ningún servidor.
+export function descargarExcelDeudas() {
+    let deudas = obtenerTodasLasDeudasPendientes();
+    if (deudas.length === 0) return mostrarAlerta("No hay ninguna deuda pendiente para descargar.");
+
+    let filas = [...deudas].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(d => ({
+        "Fecha": d.fecha,
+        "Persona": d.deudor,
+        "Concepto": d.concepto,
+        "Tipo": d.metodo === "EN_EL_ACTO" ? "Diario" : "Fijo (Tarjeta/Servicio)",
+        "Sentido": d.sentido === "A_FAVOR" ? "Te debe" : "Le debés",
+        "Monto": d.monto
+    }));
+
+    let hoja = XLSX.utils.json_to_sheet(filas);
+    hoja['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 35 }, { wch: 20 }, { wch: 12 }, { wch: 14 }];
+    let libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, "Cuentas por Cobrar");
+
+    let hoy = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(libro, `cuentas_por_cobrar_${hoy}.xlsx`);
+}
+
 export async function liquidarDeudaIndividual(idMov) {
     let mov = estadoApp.todosLosMovimientos.find(m => m.id === idMov) || estadoApp.movimientosMesGlobal.find(m => m.id === idMov);
     if(!mov) return;
