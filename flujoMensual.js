@@ -157,13 +157,22 @@ export function calcularFlujoDeMes(aSel, mSel) {
     let esAvanzado = (estadoApp.perfilUsuario.modo === "AVANZADO");
     let movimientosDelMes = obtenerMovimientosDeMes(aSel, mSel);
 
-    let ing = 0, gastosEnActo = 0, gastosCredito = 0, gastosServicio = 0;
+    let ing = 0, gastosEnActo = 0, gastosCredito = 0, gastosServicio = 0, gastosLiquidacion = 0;
     let gastosFijosBasic = 0, gastosVariablesBasic = 0;
 
     movimientosDelMes.forEach(mov => {
         if (mov.tipo === "Ingreso") ing += mov.monto;
-        if (mov.tipo === "Gasto Fijo" || mov.tipo === "Enviado a Ahorros") gastosFijosBasic += mov.monto;
-        if (mov.tipo === "Gasto Variable") gastosVariablesBasic += mov.monto;
+
+        // Las "liquidaciones" (cobrar/pagar una deuda, o pagar un resumen de
+        // tarjeta/servicio) no son gasto diario ni fijo ni variable — son un
+        // movimiento de plata aparte, que resta del Disponible sin ensuciar
+        // ninguna categoría de gasto.
+        let esLiquidacion = (mov.metodo === "LIQUIDACION");
+
+        if (!esLiquidacion) {
+            if (mov.tipo === "Gasto Fijo" || mov.tipo === "Enviado a Ahorros") gastosFijosBasic += mov.monto;
+            if (mov.tipo === "Gasto Variable") gastosVariablesBasic += mov.monto;
+        }
 
         if (mov.tipo !== "Ingreso" && mov.tipo !== "Cuenta Cobrar") {
             let mtd = mov.metodo || "EN_EL_ACTO";
@@ -173,13 +182,14 @@ export function calcularFlujoDeMes(aSel, mSel) {
             // como gasto real, el día que pagaste el resumen.
             if(mtd === "CREDITO" && !mov.pagado) gastosCredito += mov.monto;
             if(mtd === "SERVICIO" && !mov.pagado) gastosServicio += mov.monto;
+            if(mtd === "LIQUIDACION") gastosLiquidacion += mov.monto;
         }
     });
 
     return {
         movimientosDelMes, esAvanzado,
-        ing, gastosEnActo, gastosCredito, gastosServicio, gastosFijosBasic, gastosVariablesBasic,
-        dispReal: ing - gastosEnActo,
-        dispBasico: ing - (gastosFijosBasic + gastosVariablesBasic),
+        ing, gastosEnActo, gastosCredito, gastosServicio, gastosFijosBasic, gastosVariablesBasic, gastosLiquidacion,
+        dispReal: ing - gastosEnActo - gastosLiquidacion,
+        dispBasico: ing - (gastosFijosBasic + gastosVariablesBasic) - gastosLiquidacion,
     };
 }

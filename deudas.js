@@ -89,7 +89,7 @@ export function confirmarPagoResumen() {
 
     estadoApp.todosLosMovimientos.push({
         id: generarId(), idGrupo: generarId(), monto, tipo: "Gasto Variable",
-        concepto: `Pago resumen: ${nombreParaConcepto}`, fecha, metodo: "EN_EL_ACTO", esVirtual: false
+        concepto: `Pago resumen: ${nombreParaConcepto}`, fecha, metodo: "LIQUIDACION", esVirtual: false
     });
 
     cerrarModalPagarResumen();
@@ -173,14 +173,14 @@ export async function liquidarDeudaIndividual(idMov) {
         if(mov.sentido === "A_FAVOR") {
             // Lo que me deben nunca se contó como gasto mío (ver
             // movimientos.js), así que cobrarlo siempre es plata nueva.
-            estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mov.monto, tipo: "Ingreso", concepto: `Cobro deuda: ${mov.deudor}`, fecha: hoy, metodo: "EN_EL_ACTO" });
+            estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mov.monto, tipo: "Ingreso", concepto: `Cobro deuda: ${mov.deudor}`, fecha: hoy, metodo: "LIQUIDACION" });
         } else if (mov.metodo === "EN_EL_ACTO") {
             // Con Tarjeta/Servicio, lo que debo ya se contó como Obligación
             // mía al momento de la compra — acá solo salda la deuda con la
             // persona, sin sumar un gasto nuevo (para no contar la misma
             // plata dos veces). Con En el Acto, en cambio, todavía no se
             // había registrado ningún gasto, así que se crea acá.
-            estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mov.monto, tipo: "Gasto Variable", concepto: `Pago deuda: ${mov.deudor}`, fecha: hoy, metodo: "EN_EL_ACTO" });
+            estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mov.monto, tipo: "Gasto Variable", concepto: `Pago deuda: ${mov.deudor}`, fecha: hoy, metodo: "LIQUIDACION" });
         }
         actualizarApp(); guardarDatosEnNube();
     }
@@ -220,13 +220,13 @@ export async function liquidarDeudaGlobal(persona, neto, tipoPagar) {
     if(neto > 0) {
         // Lo que me deben nunca se contó como gasto mío, así que cobrarlo
         // siempre es plata nueva.
-        estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mReal, tipo: "Ingreso", concepto: `Cobro ${tipoPagar}: ${persona}`, fecha: hoy, metodo: "EN_EL_ACTO" });
+        estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mReal, tipo: "Ingreso", concepto: `Cobro ${tipoPagar}: ${persona}`, fecha: hoy, metodo: "LIQUIDACION" });
     } else if (tipoPagar === "DIARIO" || tipoPagar === "TODO") {
         // "TARJETA"/"SERVICIO"/"FIJO" son cuotas ya devengadas y se
         // contaron al momento de la compra — acá solo se salda la deuda,
         // sin sumar un gasto nuevo. "DIARIO"/"TODO" sí pueden incluir En el
         // Acto (nunca contado antes), así que ahí se crea el gasto.
-        estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mReal, tipo: "Gasto Variable", concepto: `Pago ${tipoPagar}: ${persona}`, fecha: hoy, metodo: "EN_EL_ACTO" });
+        estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mReal, tipo: "Gasto Variable", concepto: `Pago ${tipoPagar}: ${persona}`, fecha: hoy, metodo: "LIQUIDACION" });
     }
     actualizarApp(); guardarDatosEnNube();
 }

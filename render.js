@@ -210,13 +210,13 @@ export function actualizarApp() {
 
         filas.forEach(mov => {
             let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
-            let mtdText = mov.metodo === "CREDITO" ? "💳 Crédito" : (mov.metodo === "SERVICIO" ? "🔌 Servicio" : "💵 En el Acto");
+            let mtdText = mov.metodo === "CREDITO" ? "💳 Crédito" : (mov.metodo === "SERVICIO" ? "🔌 Servicio" : (mov.metodo === "LIQUIDACION" ? "🔄 Liquidación de Deuda" : "💵 En el Acto"));
             let lblComp = mov.esCompartido === "SÍ" ? `<span style="color:#0ea5e9; font-weight:bold;">SÍ</span>` : "No";
             let lblDeu = mov.montoAdeudado > 0 ? `<span style="color:#ef4444;">$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>` : "-";
             // Por ahora solo se puede editar texto/fecha/monto de movimientos
             // "En el Acto" reales — las cuotas de tarjeta y los servicios
             // (virtuales) todavía no tienen pensada su lógica de edición acá.
-            let esEditable = (mov.metodo === "EN_EL_ACTO" && !mov.esVirtual);
+            let esEditable = ((mov.metodo === "EN_EL_ACTO" || mov.metodo === "LIQUIDACION") && !mov.esVirtual);
             let btnEditar = esEditable ? `<button class="btn-editar" onclick="abrirModalEditarMovimiento('${mov.id}')">Editar</button> ` : '';
             let btnBorrar = `<button class="btn-borrar" onclick="${mov.esVirtual ? `darDeBajaServicio('${mov.idGrupo}')` : `borrarMovimientoReal('${mov.idGrupo}')`}">X</button>`;
             tabla.innerHTML += `<tr><td>${ff}</td><td>${escapeHTML(mov.conceptoOriginal)}</td><td>${mtdText}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${lblComp}</td><td>${lblDeu}</td><td>${btnEditar}${btnBorrar}</td></tr>`;

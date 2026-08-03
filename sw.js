@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v11.0.0'; // Pagar Resumen marca cuotas/servicios como pagados (ya no duplican en Obligaciones); Tarjeta y Servicio separados en Cuentas por Cobrar
+const CACHE_NAME = 'finanzas-v11.1.0'; // Nueva categoría "Liquidación de Deuda": resta del Disponible sin contar como gasto diario/fijo/variable
 const urlsToCache = [
   './',
   './index.html',
