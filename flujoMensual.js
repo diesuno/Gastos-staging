@@ -37,7 +37,11 @@ export function obtenerMovimientosDeMes(aSel, mSel) {
             if (montoActivo === 0) return;
 
             let fechaVMov = `${inicio.getFullYear()}-${(inicio.getMonth()+1).toString().padStart(2,'0')}-${inicio.getDate().toString().padStart(2,'0')}`;
-            let vMov = { id: susc.id + "_" + keyMes, idGrupo: susc.id, monto: montoActivo, tipo: susc.tipo, concepto: susc.concepto, fecha: fechaVMov, metodo: "SERVICIO", debito: susc.debito, dividir: susc.dividir, amigo: susc.amigo, esVirtual: true };
+            // "pagado" marca si ya pagaste este servicio puntual (ver
+            // "Pagar Resumen" en deudas.js) — mientras esté en false, sigue
+            // sumando en Obligaciones.
+            let yaPagadoResumen = (susc.pagosResumen && susc.pagosResumen.includes(keyMes));
+            let vMov = { id: susc.id + "_" + keyMes, idGrupo: susc.id, monto: montoActivo, tipo: susc.tipo, concepto: susc.concepto, fecha: fechaVMov, metodo: "SERVICIO", debito: susc.debito, dividir: susc.dividir, amigo: susc.amigo, esVirtual: true, pagado: yaPagadoResumen };
 
             // "Mi parte" (lo que se registra como Gasto real) sale siempre de
             // calcularMiParteSuscripcion(), para que el monto mostrado acá y
@@ -164,8 +168,11 @@ export function calcularFlujoDeMes(aSel, mSel) {
         if (mov.tipo !== "Ingreso" && mov.tipo !== "Cuenta Cobrar") {
             let mtd = mov.metodo || "EN_EL_ACTO";
             if(mtd === "EN_EL_ACTO") gastosEnActo += mov.monto;
-            if(mtd === "CREDITO") gastosCredito += mov.monto;
-            if(mtd === "SERVICIO") gastosServicio += mov.monto;
+            // Si ya pagaste el resumen que cubre esta cuota/servicio, no
+            // vuelve a sumar en Obligaciones — esa plata ya se contó una vez,
+            // como gasto real, el día que pagaste el resumen.
+            if(mtd === "CREDITO" && !mov.pagado) gastosCredito += mov.monto;
+            if(mtd === "SERVICIO" && !mov.pagado) gastosServicio += mov.monto;
         }
     });
 

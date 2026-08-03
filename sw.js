@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.10.0'; // Modal para exportar Excel con filtros: persona, categoría (Diarias/Fijas) y mes de las Fijas
+const CACHE_NAME = 'finanzas-v11.0.0'; // Pagar Resumen marca cuotas/servicios como pagados (ya no duplican en Obligaciones); Tarjeta y Servicio separados en Cuentas por Cobrar
 const urlsToCache = [
   './',
   './index.html',

@@ -2,12 +2,99 @@
 // 🤝 GESTIÓN DE DEUDAS Y CUENTAS POR COBRAR
 // ==========================================
 import { estadoApp } from './estado.js';
-import { generarId } from './utilidades.js';
+import { generarId, agruparMovimientosPorGrupo } from './utilidades.js';
 import { mostrarConfirmacion, mostrarPrompt, mostrarAlerta } from './modales.js';
 import { actualizarApp } from './render.js';
 import { guardarDatosEnNube } from './auth.js';
-import { obtenerTodasLasDeudasPendientes } from './flujoMensual.js';
+import { obtenerTodasLasDeudasPendientes, calcularMiParteSuscripcion } from './flujoMensual.js';
 import { obtenerKeyPeriodoDeFecha } from './periodo.js';
+
+// --- PAGAR RESUMEN (TARJETA O SERVICIO) ---
+// Las cuotas/servicios individuales ya se ven en Obligaciones (se devengan
+// solos cada mes), pero eso NO resta del Disponible — porque todavía no los
+// pagaste. Esto es lo que sí resta: el pago real del resumen, el día que
+// efectivamente sale la plata de tu bolsillo — y de paso marca esas
+// cuotas/ese servicio como pagados, para que no vuelvan a sumar en
+// Obligaciones este mes (sin esto, se contaría la misma plata dos veces).
+export function abrirModalPagarResumen() {
+    let selTarjeta = document.getElementById('resumenTarjeta'); selTarjeta.innerHTML = '';
+    estadoApp.listaTarjetas.forEach(t => { let o = document.createElement('option'); o.value = t; o.text = t; selTarjeta.appendChild(o); });
+
+    let selServicio = document.getElementById('resumenServicio'); selServicio.innerHTML = '';
+    estadoApp.suscripciones.forEach(s => { let o = document.createElement('option'); o.value = s.id; o.text = s.concepto; selServicio.appendChild(o); });
+
+    if (estadoApp.listaTarjetas.length === 0 && estadoApp.suscripciones.length === 0) {
+        return mostrarAlerta("Todavía no cargaste ninguna tarjeta ni servicio.");
+    }
+    document.getElementById('resumenTipo').value = estadoApp.listaTarjetas.length > 0 ? 'TARJETA' : 'SERVICIO';
+    document.getElementById('resumenFecha').valueAsDate = new Date();
+    toggleResumenTipo();
+    document.getElementById('modal-pagar-resumen').style.display = 'flex';
+}
+
+export function toggleResumenTipo() {
+    let esTarjeta = document.getElementById('resumenTipo').value === 'TARJETA';
+    document.getElementById('boxResumenTarjeta').style.display = esTarjeta ? 'block' : 'none';
+    document.getElementById('boxResumenServicio').style.display = esTarjeta ? 'none' : 'block';
+    sugerirMontoResumen();
+}
+
+export function sugerirMontoResumen() {
+    let esTarjeta = document.getElementById('resumenTipo').value === 'TARJETA';
+    let sugerido = 0;
+    if (esTarjeta) {
+        let tarjeta = document.getElementById('resumenTarjeta').value;
+        let gruposUI = agruparMovimientosPorGrupo(estadoApp.movimientosMesGlobal);
+        sugerido = Object.values(gruposUI)
+            .filter(mov => mov.metodo === "CREDITO" && mov.tarjeta === tarjeta && !mov.pagado)
+            .reduce((acc, mov) => acc + mov.montoTotalAgrupado, 0);
+    } else {
+        let idServicio = document.getElementById('resumenServicio').value;
+        let susc = estadoApp.suscripciones.find(s => s.id === idServicio);
+        if (susc) sugerido = calcularMiParteSuscripcion(susc, estadoApp.keyMesActualGlobal);
+    }
+    document.getElementById('resumenMonto').value = sugerido.toFixed(2);
+}
+
+export function cerrarModalPagarResumen() {
+    document.getElementById('modal-pagar-resumen').style.display = 'none';
+}
+
+export function confirmarPagoResumen() {
+    let esTarjeta = document.getElementById('resumenTipo').value === 'TARJETA';
+    let monto = parseFloat(document.getElementById('resumenMonto').value);
+    let fecha = document.getElementById('resumenFecha').value;
+    if (!monto || monto <= 0) return mostrarAlerta("Ingresá un monto válido");
+    if (!fecha) return mostrarAlerta("Elegí una fecha");
+
+    let nombreParaConcepto = "";
+    if (esTarjeta) {
+        let tarjeta = document.getElementById('resumenTarjeta').value;
+        nombreParaConcepto = tarjeta;
+        // Marcamos como pagadas todas las cuotas de esa tarjeta del mes que
+        // estás mirando — dejan de sumar en Obligaciones desde ahora.
+        estadoApp.todosLosMovimientos.forEach(mov => {
+            if (mov.metodo === "CREDITO" && mov.tarjeta === tarjeta && !mov.pagado && obtenerKeyPeriodoDeFecha(mov.fecha) === estadoApp.keyMesActualGlobal) {
+                mov.pagado = true;
+            }
+        });
+    } else {
+        let idServicio = document.getElementById('resumenServicio').value;
+        let susc = estadoApp.suscripciones.find(s => s.id === idServicio);
+        if (!susc) return mostrarAlerta("No se encontró ese servicio.");
+        nombreParaConcepto = susc.concepto;
+        if (!susc.pagosResumen) susc.pagosResumen = [];
+        if (!susc.pagosResumen.includes(estadoApp.keyMesActualGlobal)) susc.pagosResumen.push(estadoApp.keyMesActualGlobal);
+    }
+
+    estadoApp.todosLosMovimientos.push({
+        id: generarId(), idGrupo: generarId(), monto, tipo: "Gasto Variable",
+        concepto: `Pago resumen: ${nombreParaConcepto}`, fecha, metodo: "EN_EL_ACTO", esVirtual: false
+    });
+
+    cerrarModalPagarResumen();
+    actualizarApp(); guardarDatosEnNube();
+}
 
 // --- MODAL EXPORTAR EXCEL (con filtros) ---
 export function abrirModalExportarExcel() {
@@ -60,7 +147,7 @@ export function confirmarDescargaExcel() {
         "Fecha": d.fecha,
         "Concepto": d.concepto,
         "Tipo": d.metodo === "EN_EL_ACTO" ? "Diario" : "Fijo (Tarjeta/Servicio)",
-        "Monto": d.monto
+        "Monto": d.sentido === "EN_CONTRA" ? -d.monto : d.monto
     }));
 
     let hoja = XLSX.utils.json_to_sheet(filas);
@@ -115,10 +202,13 @@ export async function liquidarDeudaGlobal(persona, neto, tipoPagar) {
     todasLasDeudas.forEach(m => {
         if(m.deudor === persona) {
             let esDiario = (m.metodo === "EN_EL_ACTO");
+            let esTarjeta = (m.metodo === "CREDITO");
+            let esServicio = (m.metodo === "SERVICIO");
             let esDelMesFiltrado = obtenerKeyPeriodoDeFecha(m.fecha) === keySel;
             let condFiltro = (tipoPagar === "TODO" && (esDiario || esDelMesFiltrado))
                 || (tipoPagar === "DIARIO" && esDiario)
-                || (tipoPagar === "FIJO" && !esDiario && esDelMesFiltrado);
+                || (tipoPagar === "TARJETA" && esTarjeta && esDelMesFiltrado)
+                || (tipoPagar === "SERVICIO" && esServicio && esDelMesFiltrado);
             if (condFiltro) {
                 if (m.esVirtual) { let s = estadoApp.suscripciones.find(x => x.id === m.idGrupo); if(s) { if(!s.pagosAmigo) s.pagosAmigo = []; s.pagosAmigo.push(m.mesClave); } }
                 else { let r = estadoApp.todosLosMovimientos.find(x => x.id === m.id); if(r) r.estado = "Saldado"; }
@@ -131,9 +221,9 @@ export async function liquidarDeudaGlobal(persona, neto, tipoPagar) {
         // Lo que me deben nunca se contó como gasto mío, así que cobrarlo
         // siempre es plata nueva.
         estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mReal, tipo: "Ingreso", concepto: `Cobro ${tipoPagar}: ${persona}`, fecha: hoy, metodo: "EN_EL_ACTO" });
-    } else if (tipoPagar !== "FIJO") {
-        // "FIJO" es exclusivamente Tarjeta/Servicio, y esas obligaciones ya
-        // se contaron al momento de la compra — acá solo se salda la deuda,
+    } else if (tipoPagar === "DIARIO" || tipoPagar === "TODO") {
+        // "TARJETA"/"SERVICIO"/"FIJO" son cuotas ya devengadas y se
+        // contaron al momento de la compra — acá solo se salda la deuda,
         // sin sumar un gasto nuevo. "DIARIO"/"TODO" sí pueden incluir En el
         // Acto (nunca contado antes), así que ahí se crea el gasto.
         estadoApp.todosLosMovimientos.push({ id: generarId(), idGrupo: generarId(), monto: mReal, tipo: "Gasto Variable", concepto: `Pago ${tipoPagar}: ${persona}`, fecha: hoy, metodo: "EN_EL_ACTO" });

@@ -285,10 +285,12 @@ export function actualizarApp() {
         filasCredito.forEach(mov => {
             let lblComp = mov.esCompartido === "SÍ" ? `<span style="color:#0ea5e9; font-weight:bold;">SÍ</span>` : "No";
             let lblDeu = mov.montoAdeudado > 0 ? `<span style="color:#ef4444;">$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>` : "-";
-            totalCredMio += mov.montoTotalAgrupado;
-            totalCredCompartido += mov.montoAdeudado;
+            // Si ya pagaste el resumen que cubre esta cuota, no vuelve a
+            // sumar en el total — ya se contó como gasto real ese día.
+            if (!mov.pagado) { totalCredMio += mov.montoTotalAgrupado; totalCredCompartido += mov.montoAdeudado; }
             let saldoRest = mov.deudaRestante || 0;
-            tbCredito.innerHTML += `<tr><td>${escapeHTML(mov.conceptoOriginal)}</td><td>${mov.cuotaActual}/${mov.cuotasTotales}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td style="color:#ef4444; font-weight:bold;">$${saldoRest.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${escapeHTML(mov.tarjeta || '-')}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">X Todo</button></td></tr>`;
+            let textoConIndicador = mov.pagado ? `✅ ${escapeHTML(mov.conceptoOriginal)}` : escapeHTML(mov.conceptoOriginal);
+            tbCredito.innerHTML += `<tr><td>${textoConIndicador}</td><td>${mov.cuotaActual}/${mov.cuotasTotales}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td style="color:#ef4444; font-weight:bold;">$${saldoRest.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${escapeHTML(mov.tarjeta || '-')}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">X Todo</button></td></tr>`;
         });
 
         let filasServicios = gruposUI.filter(mov => {
@@ -303,8 +305,7 @@ export function actualizarApp() {
         filasServicios.forEach(mov => {
             let lblComp = mov.esCompartido === "SÍ" ? `<span style="color:#0ea5e9; font-weight:bold;">SÍ</span>` : "No";
             let lblDeu = mov.montoAdeudado > 0 ? `<span style="color:#ef4444;">$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>` : "-";
-            totalServMio += mov.montoTotalAgrupado;
-            totalServCompartido += mov.montoAdeudado;
+            if (!mov.pagado) { totalServMio += mov.montoTotalAgrupado; totalServCompartido += mov.montoAdeudado; }
             let prevMonthDate = new Date(aSel, mSel - 1, 1);
             let keyMesAnterior = `${prevMonthDate.getFullYear()}-${(prevMonthDate.getMonth()+1).toString().padStart(2,'0')}`;
             let montoPasado = null; let variacionHtml = "-";
@@ -325,7 +326,8 @@ export function actualizarApp() {
             } else { variacionHtml = `<span style="color:#3b82f6; font-style:italic;">Nuevo</span>`; }
 
             let debStr = mov.debito === "SI" ? "✅ Sí" : "❌ No";
-            tbServ.innerHTML += `<tr><td>${escapeHTML(mov.conceptoOriginal)}</td><td>${debStr}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${variacionHtml}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-editar" onclick="abrirModalEditarServicio('${mov.idGrupo}')">Editar</button> <button class="btn-borrar" onclick="darDeBajaServicio('${mov.idGrupo}')" style="margin-left:5px;">Baja</button></td></tr>`;
+            let textoServConIndicador = mov.pagado ? `✅ ${escapeHTML(mov.conceptoOriginal)}` : escapeHTML(mov.conceptoOriginal);
+            tbServ.innerHTML += `<tr><td>${textoServConIndicador}</td><td>${debStr}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${variacionHtml}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-editar" onclick="abrirModalEditarServicio('${mov.idGrupo}')">Editar</button> <button class="btn-borrar" onclick="darDeBajaServicio('${mov.idGrupo}')" style="margin-left:5px;">Baja</button></td></tr>`;
         });
 
         document.getElementById('lblTotalCreditos').innerText = `Mío: $${totalCredMio.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}   —   Compartido: $${totalCredCompartido.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
@@ -446,14 +448,17 @@ function actualizarPestañaCuentasCobrar(esAvanzado) {
     let deudasDiariasArr = todasLasDeudasPendientes.filter(mov => mov.metodo === "EN_EL_ACTO");
     let deudasFijasArr = todasLasDeudasPendientes.filter(mov => mov.metodo !== "EN_EL_ACTO" && obtenerKeyPeriodoDeFecha(mov.fecha) === keySel);
 
-    let totDiario = {}; let totFijo = {};
-    estadoApp.listaAmigos.forEach(am => { totDiario[am] = 0; totFijo[am] = 0; });
+    let totDiario = {}; let totTarjeta = {}; let totServicio = {};
+    estadoApp.listaAmigos.forEach(am => { totDiario[am] = 0; totTarjeta[am] = 0; totServicio[am] = 0; });
 
     // Los totales por persona se calculan sobre lo que efectivamente se va a
     // mostrar en cada tabla (Diarias: todo lo pendiente; Fijas: solo el mes
     // filtrado), no sobre el orden en que después se muestren las filas.
     deudasDiariasArr.forEach(mov => { if(totDiario[mov.deudor] !== undefined) totDiario[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto; });
-    deudasFijasArr.forEach(mov => { if(totFijo[mov.deudor] !== undefined) totFijo[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto; });
+    deudasFijasArr.forEach(mov => {
+        let destino = mov.metodo === "CREDITO" ? totTarjeta : totServicio;
+        if(destino[mov.deudor] !== undefined) destino[mov.deudor] += (mov.sentido === "A_FAVOR") ? mov.monto : -mov.monto;
+    });
 
     let filaHtml = (mov) => {
         let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
@@ -472,8 +477,8 @@ function actualizarPestañaCuentasCobrar(esAvanzado) {
 
     let gridDeudas = document.getElementById('gridResumenDeudas'); gridDeudas.innerHTML = '';
     for(let p in totDiario) {
-        let sD = totDiario[p]; let sF = totFijo[p]; let sTotal = sD + sF;
-        if (sD === 0 && sF === 0) continue;
+        let sD = totDiario[p]; let sT = totTarjeta[p]; let sS = totServicio[p]; let sTotal = sD + sT + sS;
+        if (sD === 0 && sT === 0 && sS === 0) continue;
         let colorB = sTotal >= 0 ? "#10b981" : "#ef4444"; let colorC = sTotal >= 0 ? "#ecfdf5" : "#fef2f2";
 
         gridDeudas.innerHTML += `<div class="card" style="border-left-color: ${colorB}; background:${colorC}; text-align:left;">
@@ -483,8 +488,12 @@ function actualizarPestañaCuentasCobrar(esAvanzado) {
                 <button class="btn-secundario" style="padding:4px 8px; font-size:0.8em;" onclick="liquidarDeudaGlobal('${p}', ${sD}, 'DIARIO')">Saldar</button>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9em;">
-                <span>Tarjetas/Serv: <b>${sF >= 0 ? '' : '-'}$${Math.abs(sF).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</b></span>
-                <button class="btn-secundario" style="padding:4px 8px; font-size:0.8em;" onclick="liquidarDeudaGlobal('${p}', ${sF}, 'FIJO')">Saldar</button>
+                <span>Tarjeta: <b>${sT >= 0 ? '' : '-'}$${Math.abs(sT).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</b></span>
+                <button class="btn-secundario" style="padding:4px 8px; font-size:0.8em;" onclick="liquidarDeudaGlobal('${p}', ${sT}, 'TARJETA')">Saldar</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9em;">
+                <span>Servicio: <b>${sS >= 0 ? '' : '-'}$${Math.abs(sS).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</b></span>
+                <button class="btn-secundario" style="padding:4px 8px; font-size:0.8em;" onclick="liquidarDeudaGlobal('${p}', ${sS}, 'SERVICIO')">Saldar</button>
             </div>
             <hr style="border:0; border-top:1px solid #cbd5e1; margin:10px 0;">
             <div style="display:flex; justify-content:space-between; align-items:center;">

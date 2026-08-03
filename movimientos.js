@@ -166,6 +166,10 @@ export function agregarMovimiento() {
             let objBase = {
                 id: generarId(), idGrupo: idGrupoPrincipal, monto: montoPorCuota, tipo: tipo, concepto: conceptoF,
                 fecha: fechaF, metodo: metodoP, cuotaActual: i+1, cuotasTotales: cuotas, tarjeta: tarjeta,
+                // "pagado" marca si esta cuota puntual ya quedó cubierta al
+                // pagar el resumen de la tarjeta (ver deudas.js) — mientras
+                // esté en false, sigue sumando en Obligaciones.
+                pagado: false,
                 deudaRestante: montoTotal - (montoPorCuota * (i + 1)), esVirtual: false
             };
 

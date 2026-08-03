@@ -79,6 +79,34 @@
     </div>
 </div>
 
+<!-- MODAL PAGAR RESUMEN DE TARJETA O SERVICIO -->
+<div id="modal-pagar-resumen" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:440px; text-align:left;">
+        <h2 style="margin-top:0; text-align:center;">💳 Pagar Resumen</h2>
+        <p style="font-size:0.85em; color:#64748b; margin-top:-10px;">Esto es lo que efectivamente sale de tu bolsillo — se resta del Disponible, y esa/s cuota/s dejan de sumar en Obligaciones este mes (para no contar la misma plata dos veces).</p>
+        <div class="form-grid">
+            <div class="form-group"><label for="resumenTipo">¿Qué estás pagando?</label>
+                <select id="resumenTipo" onchange="toggleResumenTipo()">
+                    <option value="TARJETA">Tarjeta de Crédito</option>
+                    <option value="SERVICIO">Servicio / Suscripción</option>
+                </select>
+            </div>
+            <div class="form-group" id="boxResumenTarjeta"><label for="resumenTarjeta">Tarjeta</label>
+                <select id="resumenTarjeta" onchange="sugerirMontoResumen()"></select>
+            </div>
+            <div class="form-group" id="boxResumenServicio" style="display:none;"><label for="resumenServicio">Servicio</label>
+                <select id="resumenServicio" onchange="sugerirMontoResumen()"></select>
+            </div>
+            <div class="form-group"><label for="resumenMonto">Monto a Pagar</label><input type="number" step="any" id="resumenMonto"><span class="porcentaje">Sugerido según este mes — corregilo si vino distinto</span></div>
+            <div class="form-group"><label for="resumenFecha">Fecha de Pago</label><input type="date" id="resumenFecha"></div>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+            <button class="btn-secundario" onclick="cerrarModalPagarResumen()">Cancelar</button>
+            <button class="btn-verde" onclick="confirmarPagoResumen()">Confirmar Pago</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL EXPORTAR EXCEL -->
 <div id="modal-exportar-excel" class="modal-overlay" style="display:none;">
     <div class="modal-box" style="max-width:440px; text-align:left;">
@@ -431,6 +459,7 @@
             <tbody id="tablaCreditos"></tbody>
         </table>
         <div class="totales-footer" id="lblTotalCreditos">Total Tarjetas: $0.00</div>
+        <button style="background-color:#1e3a8a; margin-top:10px;" onclick="abrirModalPagarResumen()">💳 Pagar Resumen</button>
 
         <h3 style="color:#1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 30px;">🔌 Servicios y Suscripciones Mensuales</h3>
         <div class="form-section" style="padding:16px;">
