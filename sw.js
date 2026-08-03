@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.6.0'; // Valor Cuota (Tarjetas) muestra el monto completo real, no el dividido — los totales siguen sumando bien la división
+const CACHE_NAME = 'finanzas-v10.7.0'; // Nueva columna "Valor a Pagar (100%)" calculada desde el monto dividido + cómo se dividió, sin campo nuevo redundante
 const urlsToCache = [
   './',
   './index.html',
