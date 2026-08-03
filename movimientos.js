@@ -166,6 +166,13 @@ export function agregarMovimiento() {
             let objBase = {
                 id: generarId(), idGrupo: idGrupoPrincipal, monto: montoPorCuota, tipo: tipo, concepto: conceptoF,
                 fecha: fechaF, metodo: metodoP, cuotaActual: i+1, cuotasTotales: cuotas, tarjeta: tarjeta,
+                // "montoCuotaCompleta" es el valor REAL de la cuota (el que
+                // aparece en tu resumen de tarjeta), sin dividir — se usa
+                // solo para MOSTRAR en Detalle Gastos. "monto" (arriba) es tu
+                // parte real y es el que se usa para calcular Obligaciones y
+                // los totales Mío/Compartido, que sí tienen que reflejar la
+                // división cuando el gasto es compartido.
+                montoCuotaCompleta: montoPorCuota,
                 deudaRestante: montoTotal - (montoPorCuota * (i + 1)), esVirtual: false
             };
 

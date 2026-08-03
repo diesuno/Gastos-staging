@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.5.0'; // Fix importante: la variación de servicios comparaba "mi parte" contra el monto completo sin dividir
+const CACHE_NAME = 'finanzas-v10.6.0'; // Valor Cuota (Tarjetas) muestra el monto completo real, no el dividido — los totales siguen sumando bien la división
 const urlsToCache = [
   './',
   './index.html',

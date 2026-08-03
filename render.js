@@ -279,7 +279,7 @@ export function actualizarApp() {
             return true;
         });
         let ordenCred = ordenTablas.detalleCreditos;
-        let valorDeCredito = (mov) => ordenCred.campo === 'monto' ? mov.montoTotalAgrupado : (ordenCred.campo === 'tarjeta' ? (mov.tarjeta || '') : mov.conceptoOriginal);
+        let valorDeCredito = (mov) => ordenCred.campo === 'monto' ? (mov.montoCuotaCompleta ?? mov.montoTotalAgrupado) : (ordenCred.campo === 'tarjeta' ? (mov.tarjeta || '') : mov.conceptoOriginal);
         filasCredito.sort((a, b) => (ordenCred.ascendente ? 1 : -1) * compararValores(valorDeCredito(a), valorDeCredito(b)));
 
         filasCredito.forEach(mov => {
@@ -288,7 +288,7 @@ export function actualizarApp() {
             totalCredMio += mov.montoTotalAgrupado;
             totalCredCompartido += mov.montoAdeudado;
             let saldoRest = mov.deudaRestante || 0;
-            tbCredito.innerHTML += `<tr><td>${escapeHTML(mov.conceptoOriginal)}</td><td>${mov.cuotaActual}/${mov.cuotasTotales}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td style="color:#ef4444; font-weight:bold;">$${saldoRest.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${escapeHTML(mov.tarjeta || '-')}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">X Todo</button></td></tr>`;
+            tbCredito.innerHTML += `<tr><td>${escapeHTML(mov.conceptoOriginal)}</td><td>${mov.cuotaActual}/${mov.cuotasTotales}</td><td>$${(mov.montoCuotaCompleta ?? mov.montoTotalAgrupado).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td style="color:#ef4444; font-weight:bold;">$${saldoRest.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${escapeHTML(mov.tarjeta || '-')}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">X Todo</button></td></tr>`;
         });
 
         let filasServicios = gruposUI.filter(mov => {
