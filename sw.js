@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.9.0'; // Botón "Descargar Excel" en Cuentas por Cobrar (usa SheetJS, generado en el navegador)
+const CACHE_NAME = 'finanzas-v10.10.0'; // Modal para exportar Excel con filtros: persona, categoría (Diarias/Fijas) y mes de las Fijas
 const urlsToCache = [
   './',
   './index.html',

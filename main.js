@@ -43,7 +43,8 @@ import {
     borrarMovimientoReal, darDeBajaServicio,
     abrirModalEditarServicio, toggleCamposModalEditarServicio,
     cerrarModalEditarServicio, guardarEdicionServicio,
-    descargarExcelDeudas
+    abrirModalExportarExcel, cerrarModalExportarExcel,
+    toggleExportFijasTodosMeses, confirmarDescargaExcel
 } from './deudas.js';
 
 import { toggleSerieGrafico, setMesesAMostrar } from './grafico.js';
@@ -130,7 +131,10 @@ window.abrirModalEditarServicio = abrirModalEditarServicio;
 window.toggleCamposModalEditarServicio = toggleCamposModalEditarServicio;
 window.cerrarModalEditarServicio = cerrarModalEditarServicio;
 window.guardarEdicionServicio = guardarEdicionServicio;
-window.descargarExcelDeudas = descargarExcelDeudas;
+window.abrirModalExportarExcel = abrirModalExportarExcel;
+window.cerrarModalExportarExcel = cerrarModalExportarExcel;
+window.toggleExportFijasTodosMeses = toggleExportFijasTodosMeses;
+window.confirmarDescargaExcel = confirmarDescargaExcel;
 window.liquidarDeudaIndividual = liquidarDeudaIndividual;
 window.liquidarDeudaGlobal = liquidarDeudaGlobal;
 

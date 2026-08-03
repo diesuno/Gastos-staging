@@ -9,29 +9,68 @@ import { guardarDatosEnNube } from './auth.js';
 import { obtenerTodasLasDeudasPendientes } from './flujoMensual.js';
 import { obtenerKeyPeriodoDeFecha } from './periodo.js';
 
-// Arma un Excel (.xlsx) con el detalle de Cuentas por Cobrar, para poder
-// compartirlo. Se genera todo en el navegador con SheetJS (cargada en
-// index.html) — no hace falta ningún servidor.
-export function descargarExcelDeudas() {
-    let deudas = obtenerTodasLasDeudasPendientes();
-    if (deudas.length === 0) return mostrarAlerta("No hay ninguna deuda pendiente para descargar.");
+// --- MODAL EXPORTAR EXCEL (con filtros) ---
+export function abrirModalExportarExcel() {
+    let sel = document.getElementById('exportPersona'); sel.innerHTML = '<option value="TODAS">Todas</option>';
+    estadoApp.listaAmigos.forEach(am => { let o = document.createElement('option'); o.value = am; o.text = am; sel.appendChild(o); });
+    document.getElementById('chkExportDiarias').checked = true;
+    document.getElementById('chkExportFijas').checked = true;
+    document.getElementById('chkExportFijasTodosMeses').checked = false;
+    toggleExportFijasTodosMeses();
+    document.getElementById('modal-exportar-excel').style.display = 'flex';
+}
 
-    let filas = [...deudas].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(d => ({
+export function cerrarModalExportarExcel() {
+    document.getElementById('modal-exportar-excel').style.display = 'none';
+}
+
+export function toggleExportFijasTodosMeses() {
+    let incluirFijas = document.getElementById('chkExportFijas').checked;
+    document.getElementById('boxExportFijasTodosMeses').style.display = incluirFijas ? 'block' : 'none';
+}
+
+// Arma un Excel (.xlsx) con el detalle de Cuentas por Cobrar que coincida con
+// los filtros elegidos, para poder compartirlo. Se genera todo en el
+// navegador con SheetJS (cargada en index.html) — no hace falta servidor.
+export function confirmarDescargaExcel() {
+    let persona = document.getElementById('exportPersona').value;
+    let incluirDiarias = document.getElementById('chkExportDiarias').checked;
+    let incluirFijas = document.getElementById('chkExportFijas').checked;
+    let fijasTodosMeses = document.getElementById('chkExportFijasTodosMeses').checked;
+    if (!incluirDiarias && !incluirFijas) return mostrarAlerta("Elegí incluir Diarias, Fijas, o ambas.");
+
+    let sel = document.getElementById('filtroMesAnio');
+    let [aSel, mSel] = sel.value.split('-').map(Number);
+    let keySel = `${aSel}-${(mSel + 1).toString().padStart(2, '0')}`;
+
+    let filtradas = obtenerTodasLasDeudasPendientes().filter(d => {
+        let esDiaria = d.metodo === "EN_EL_ACTO";
+        if (esDiaria && !incluirDiarias) return false;
+        if (!esDiaria && !incluirFijas) return false;
+        // Las Fijas se devengan mes a mes, así que por defecto solo se
+        // incluyen las del mes que estás mirando arriba (a menos que se
+        // tilde "incluir todos los meses pendientes").
+        if (!esDiaria && !fijasTodosMeses && obtenerKeyPeriodoDeFecha(d.fecha) !== keySel) return false;
+        if (persona !== 'TODAS' && d.deudor !== persona) return false;
+        return true;
+    });
+    if (filtradas.length === 0) return mostrarAlerta("No hay deudas que coincidan con esos filtros.");
+
+    let filas = [...filtradas].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(d => ({
         "Fecha": d.fecha,
-        "Persona": d.deudor,
         "Concepto": d.concepto,
         "Tipo": d.metodo === "EN_EL_ACTO" ? "Diario" : "Fijo (Tarjeta/Servicio)",
-        "Sentido": d.sentido === "A_FAVOR" ? "Te debe" : "Le debés",
         "Monto": d.monto
     }));
 
     let hoja = XLSX.utils.json_to_sheet(filas);
-    hoja['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 35 }, { wch: 20 }, { wch: 12 }, { wch: 14 }];
+    hoja['!cols'] = [{ wch: 12 }, { wch: 35 }, { wch: 20 }, { wch: 14 }];
     let libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Cuentas por Cobrar");
 
     let hoy = new Date().toISOString().split('T')[0];
     XLSX.writeFile(libro, `cuentas_por_cobrar_${hoy}.xlsx`);
+    cerrarModalExportarExcel();
 }
 
 export async function liquidarDeudaIndividual(idMov) {
