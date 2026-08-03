@@ -2,7 +2,7 @@
 // 🖼️ RENDERIZADO PRINCIPAL (dashboard, pestañas y tablas)
 // ==========================================
 import { estadoApp, nombresMeses, fechaActual } from './estado.js';
-import { escapeHTML, agruparMovimientosPorGrupo, precioNominalSp500Usd, describirMovimientoInversion, obtenerMontoYSimboloParaMostrar, calcularValorTotalCuota } from './utilidades.js';
+import { escapeHTML, agruparMovimientosPorGrupo, precioNominalSp500Usd, describirMovimientoInversion, obtenerMontoYSimboloParaMostrar } from './utilidades.js';
 import { calcularFlujoDeMes, obtenerTodasLasDeudasPendientes, calcularMiParteSuscripcion } from './flujoMensual.js';
 import { reconstruirHistorialPesos } from './cierreMensual.js';
 import { renderizarGrafico, seriesGrafico } from './grafico.js';
@@ -288,11 +288,7 @@ export function actualizarApp() {
             totalCredMio += mov.montoTotalAgrupado;
             totalCredCompartido += mov.montoAdeudado;
             let saldoRest = mov.deudaRestante || 0;
-            let valorTotal = calcularValorTotalCuota(mov);
-            let valorTotalTxt = valorTotal !== null
-                ? `$${valorTotal.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`
-                : `<span style="color:#94a3b8; font-style:italic;">Sin datos (cuota vieja)</span>`;
-            tbCredito.innerHTML += `<tr><td>${escapeHTML(mov.conceptoOriginal)}</td><td>${mov.cuotaActual}/${mov.cuotasTotales}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${valorTotalTxt}</td><td style="color:#ef4444; font-weight:bold;">$${saldoRest.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${escapeHTML(mov.tarjeta || '-')}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">X Todo</button></td></tr>`;
+            tbCredito.innerHTML += `<tr><td>${escapeHTML(mov.conceptoOriginal)}</td><td>${mov.cuotaActual}/${mov.cuotasTotales}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td style="color:#ef4444; font-weight:bold;">$${saldoRest.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${escapeHTML(mov.tarjeta || '-')}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">X Todo</button></td></tr>`;
         });
 
         let filasServicios = gruposUI.filter(mov => {

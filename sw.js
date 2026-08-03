@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v10.7.0'; // Nueva columna "Valor a Pagar (100%)" calculada desde el monto dividido + cómo se dividió, sin campo nuevo redundante
+const CACHE_NAME = 'finanzas-v10.8.0'; // Revertida la columna "Valor a Pagar (100%)" — Tarjetas vuelve a mostrar solo Valor Cuota
 const urlsToCache = [
   './',
   './index.html',

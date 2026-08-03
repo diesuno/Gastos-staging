@@ -166,13 +166,6 @@ export function agregarMovimiento() {
             let objBase = {
                 id: generarId(), idGrupo: idGrupoPrincipal, monto: montoPorCuota, tipo: tipo, concepto: conceptoF,
                 fecha: fechaF, metodo: metodoP, cuotaActual: i+1, cuotasTotales: cuotas, tarjeta: tarjeta,
-                // Guardamos CÓMO se dividió esta cuota (aunque "monto" ya
-                // quede con tu parte real) para poder reconstruir el valor
-                // 100% de la cuota en Detalle Gastos sin ambigüedad — con
-                // solo el monto ya dividido no se puede distinguir "la mitad
-                // de X" de "el 100% de X" cuando coinciden con la deuda
-                // asociada.
-                dividir: dividir,
                 deudaRestante: montoTotal - (montoPorCuota * (i + 1)), esVirtual: false
             };
 

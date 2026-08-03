@@ -5,19 +5,6 @@ import { estadoApp } from './estado.js';
 
 export function generarId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
 
-// Reconstruye el valor 100% (completo) de una cuota de tarjeta a partir de
-// "monto" (que ya es tu parte real, dividida) y "dividir" (cómo se dividió,
-// guardado en cada cuota desde este cambio). Con SOLO el monto ya dividido
-// no se puede distinguir "la mitad de X" de "el 100% de X" cuando ambos
-// coinciden con la deuda asociada — por eso hace falta el campo dividir.
-// Si la cuota es de antes de este cambio (no tiene "dividir" guardado),
-// devuelve null — no hay forma confiable de reconstruirlo para esos casos.
-export function calcularValorTotalCuota(mov) {
-    if (mov.dividir === undefined) return null;
-    if (mov.dividir === "PAGUE_50_INTEGRO" || mov.dividir === "PAGO_OTRO_50") return mov.montoTotalAgrupado * 2;
-    return mov.montoTotalAgrupado; // "NO" (normal) o "PAGO_OTRO_100_DEUDA" (ya es el 100%)
-}
-
 
 // Convierte texto libre del usuario (concepto, nombre de persona, etc.) en texto
 // seguro para insertar con innerHTML, neutralizando <, >, &, comillas.
