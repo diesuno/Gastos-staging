@@ -158,6 +158,45 @@ export async function pagarTodosLosServicios() {
     actualizarApp(); guardarDatosEnNube();
 }
 
+// --- ARREGLAR DATOS VIEJOS (cuotas cargadas antes de tener tarjeta/pagado) ---
+
+// Le asigna una tarjeta a TODAS las cuotas de una misma compra (pasadas y
+// futuras) — útil para compras viejas que se cargaron antes de que existiera
+// el campo Tarjeta, y que por eso "Pagar Resumen" nunca podía encontrar.
+export async function asignarTarjetaAGrupo(idGrupo) {
+    let sugerida = estadoApp.listaTarjetas[0] || '';
+    let nombre = await mostrarPrompt("¿Con qué tarjeta se pagó esta compra?", sugerida);
+    if (!nombre) return;
+    nombre = nombre.trim();
+    if (!nombre) return;
+
+    if (!estadoApp.listaTarjetas.includes(nombre)) estadoApp.listaTarjetas.push(nombre);
+
+    let cuotasActualizadas = 0;
+    estadoApp.todosLosMovimientos.forEach(mov => {
+        if (mov.idGrupo === idGrupo && mov.metodo === "CREDITO") {
+            mov.tarjeta = nombre;
+            cuotasActualizadas++;
+        }
+    });
+
+    actualizarApp(); guardarDatosEnNube();
+    mostrarAlerta(`Listo, se asignó "${nombre}" a ${cuotasActualizadas} cuota(s) de esta compra.`);
+}
+
+// Marca UNA cuota puntual como ya pagada, sin generar ningún gasto nuevo —
+// para corregir el registro cuando en la vida real ya la pagaste (por
+// ejemplo, con un resumen que se pagó antes de que existiera esta función),
+// pero la app no llegó a marcarla sola.
+export async function marcarCuotaComoPagada(id) {
+    let mov = estadoApp.todosLosMovimientos.find(m => m.id === id);
+    if (!mov) return;
+    if (!(await mostrarConfirmacion(`¿Marcar "${mov.concepto}" como ya pagada? Esto no resta del Disponible de nuevo — es solo para corregir el registro si ya la pagaste antes.`))) return;
+
+    mov.pagado = true;
+    actualizarApp(); guardarDatosEnNube();
+}
+
 // --- MODAL EXPORTAR EXCEL (con filtros) ---
 export function abrirModalExportarExcel() {
     let sel = document.getElementById('exportPersona'); sel.innerHTML = '<option value="TODAS">Todas</option>';

@@ -47,7 +47,8 @@ import {
     toggleExportFijasTodosMeses, confirmarDescargaExcel,
     abrirModalPagarResumen, sugerirMontoResumen,
     cerrarModalPagarResumen, confirmarPagoResumen, toggleResumenTipo,
-    pagarServicioIndividual, pagarTodosLosServicios
+    pagarServicioIndividual, pagarTodosLosServicios,
+    asignarTarjetaAGrupo, marcarCuotaComoPagada
 } from './deudas.js';
 
 import { toggleSerieGrafico, setMesesAMostrar } from './grafico.js';
@@ -146,6 +147,8 @@ window.confirmarPagoResumen = confirmarPagoResumen;
 window.toggleResumenTipo = toggleResumenTipo;
 window.pagarServicioIndividual = pagarServicioIndividual;
 window.pagarTodosLosServicios = pagarTodosLosServicios;
+window.asignarTarjetaAGrupo = asignarTarjetaAGrupo;
+window.marcarCuotaComoPagada = marcarCuotaComoPagada;
 window.liquidarDeudaIndividual = liquidarDeudaIndividual;
 window.liquidarDeudaGlobal = liquidarDeudaGlobal;
 

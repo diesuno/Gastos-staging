@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v11.2.0'; // Exportar datos (diagnóstico), pagar servicios individual/masivo, bloqueo de doble pago
+const CACHE_NAME = 'finanzas-v11.3.0'; // Arreglar cuotas viejas: asignar tarjeta retroactiva y marcar como pagada manualmente
 const urlsToCache = [
   './',
   './index.html',
