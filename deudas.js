@@ -71,6 +71,13 @@ export function confirmarPagoResumen() {
     if (esTarjeta) {
         let tarjeta = document.getElementById('resumenTarjeta').value;
         nombreParaConcepto = tarjeta;
+        // No dejamos pagar de nuevo si ya no queda ninguna cuota pendiente de
+        // esa tarjeta este mes — evita pagar la misma plata dos veces.
+        let hayPendientes = estadoApp.todosLosMovimientos.some(mov =>
+            mov.metodo === "CREDITO" && mov.tarjeta === tarjeta && !mov.pagado && obtenerKeyPeriodoDeFecha(mov.fecha) === estadoApp.keyMesActualGlobal
+        );
+        if (!hayPendientes) return mostrarAlerta(`Ya no hay cuotas pendientes de "${tarjeta}" este mes — no se puede pagar de nuevo.`);
+
         // Marcamos como pagadas todas las cuotas de esa tarjeta del mes que
         // estás mirando — dejan de sumar en Obligaciones desde ahora.
         estadoApp.todosLosMovimientos.forEach(mov => {
@@ -82,9 +89,12 @@ export function confirmarPagoResumen() {
         let idServicio = document.getElementById('resumenServicio').value;
         let susc = estadoApp.suscripciones.find(s => s.id === idServicio);
         if (!susc) return mostrarAlerta("No se encontró ese servicio.");
+        if (susc.pagosResumen && susc.pagosResumen.includes(estadoApp.keyMesActualGlobal)) {
+            return mostrarAlerta(`Ya pagaste "${susc.concepto}" este mes — no se puede pagar de nuevo.`);
+        }
         nombreParaConcepto = susc.concepto;
         if (!susc.pagosResumen) susc.pagosResumen = [];
-        if (!susc.pagosResumen.includes(estadoApp.keyMesActualGlobal)) susc.pagosResumen.push(estadoApp.keyMesActualGlobal);
+        susc.pagosResumen.push(estadoApp.keyMesActualGlobal);
     }
 
     estadoApp.todosLosMovimientos.push({
@@ -93,6 +103,58 @@ export function confirmarPagoResumen() {
     });
 
     cerrarModalPagarResumen();
+    actualizarApp(); guardarDatosEnNube();
+}
+
+// Paga un solo servicio con un clic (sin pasar por el modal) — usa el monto
+// que le corresponde a este mes, y queda bloqueado hasta el mes que viene.
+export async function pagarServicioIndividual(idGrupo) {
+    let susc = estadoApp.suscripciones.find(s => s.id === idGrupo);
+    if (!susc) return;
+    if (susc.pagosResumen && susc.pagosResumen.includes(estadoApp.keyMesActualGlobal)) {
+        return mostrarAlerta(`Ya pagaste "${susc.concepto}" este mes.`);
+    }
+    let monto = calcularMiParteSuscripcion(susc, estadoApp.keyMesActualGlobal);
+    if (!monto || monto <= 0) return mostrarAlerta("No hay ningún monto pendiente para este servicio este mes.");
+
+    if (!(await mostrarConfirmacion(`¿Pagar "${susc.concepto}" por $${monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}?`))) return;
+
+    if (!susc.pagosResumen) susc.pagosResumen = [];
+    susc.pagosResumen.push(estadoApp.keyMesActualGlobal);
+
+    let hoy = new Date().toISOString().split('T')[0];
+    estadoApp.todosLosMovimientos.push({
+        id: generarId(), idGrupo: generarId(), monto, tipo: "Gasto Variable",
+        concepto: `Pago resumen: ${susc.concepto}`, fecha: hoy, metodo: "LIQUIDACION", esVirtual: false
+    });
+
+    actualizarApp(); guardarDatosEnNube();
+}
+
+// Paga TODOS los servicios pendientes de este mes de un tirón, en un solo
+// movimiento — a los que ya estén pagados no los vuelve a tocar.
+export async function pagarTodosLosServicios() {
+    let pendientes = estadoApp.suscripciones
+        .map(susc => ({ susc, monto: calcularMiParteSuscripcion(susc, estadoApp.keyMesActualGlobal) }))
+        .filter(({ susc, monto }) => monto > 0 && !(susc.pagosResumen && susc.pagosResumen.includes(estadoApp.keyMesActualGlobal)));
+
+    if (pendientes.length === 0) return mostrarAlerta("No hay ningún servicio pendiente de pago este mes.");
+
+    let total = pendientes.reduce((acc, p) => acc + p.monto, 0);
+    let nombres = pendientes.map(p => p.susc.concepto).join(", ");
+    if (!(await mostrarConfirmacion(`¿Pagar ${pendientes.length} servicio(s) (${nombres}) por un total de $${total.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}?`))) return;
+
+    pendientes.forEach(({ susc }) => {
+        if (!susc.pagosResumen) susc.pagosResumen = [];
+        susc.pagosResumen.push(estadoApp.keyMesActualGlobal);
+    });
+
+    let hoy = new Date().toISOString().split('T')[0];
+    estadoApp.todosLosMovimientos.push({
+        id: generarId(), idGrupo: generarId(), monto: total, tipo: "Gasto Variable",
+        concepto: `Pago resumen: ${pendientes.length} servicios`, fecha: hoy, metodo: "LIQUIDACION", esVirtual: false
+    });
+
     actualizarApp(); guardarDatosEnNube();
 }
 

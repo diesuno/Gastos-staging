@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v11.1.0'; // Nueva categoría "Liquidación de Deuda": resta del Disponible sin contar como gasto diario/fijo/variable
+const CACHE_NAME = 'finanzas-v11.2.0'; // Exportar datos (diagnóstico), pagar servicios individual/masivo, bloqueo de doble pago
 const urlsToCache = [
   './',
   './index.html',

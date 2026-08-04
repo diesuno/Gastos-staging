@@ -219,6 +219,12 @@
             <button class="btn-verde" style="margin-top:12px;" onclick="guardarCambiosDesdePerfil()">Guardar Cambios</button>
         </div>
 
+        <div class="form-section" style="background:#f0fdf4; border:none;">
+            <h3 style="margin-top:0; color:#15803d;">📥 Exportar Datos</h3>
+            <p style="font-size:0.85em; color:#64748b; margin-top:-8px;">Descarga un archivo con todos tus datos (movimientos, servicios, inversiones) — útil para compartir y diagnosticar algo puntual, o como respaldo propio.</p>
+            <button style="background-color:#16a34a;" onclick="exportarDatosDiagnostico()">Descargar mis datos (.json)</button>
+        </div>
+
         <div class="form-section" style="background:#eff6ff; border:none;">
             <h3 style="margin-top:0; color:#1e3a8a;">🔒 Seguridad</h3>
             <div class="form-grid">
@@ -478,6 +484,7 @@
             <tbody id="tablaServicios"></tbody>
         </table>
         <div class="totales-footer" id="lblTotalServicios">Total Servicios: $0.00</div>
+        <button style="background-color:#1e3a8a; margin-top:10px;" onclick="pagarTodosLosServicios()">💵 Pagar Todos los Servicios Pendientes</button>
     </div>
 
     <!-- PESTAÑA INVERSIONES (unifica Billetera + Gráficos) -->

@@ -327,7 +327,8 @@ export function actualizarApp() {
 
             let debStr = mov.debito === "SI" ? "✅ Sí" : "❌ No";
             let textoServConIndicador = mov.pagado ? `✅ ${escapeHTML(mov.conceptoOriginal)}` : escapeHTML(mov.conceptoOriginal);
-            tbServ.innerHTML += `<tr><td>${textoServConIndicador}</td><td>${debStr}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${variacionHtml}</td><td>${lblComp}</td><td>${lblDeu}</td><td><button class="btn-editar" onclick="abrirModalEditarServicio('${mov.idGrupo}')">Editar</button> <button class="btn-borrar" onclick="darDeBajaServicio('${mov.idGrupo}')" style="margin-left:5px;">Baja</button></td></tr>`;
+            let btnPagarServ = mov.pagado ? '' : `<button class="btn-verde" style="padding:6px 10px; font-size:0.85em;" onclick="pagarServicioIndividual('${mov.idGrupo}')">Pagar</button> `;
+            tbServ.innerHTML += `<tr><td>${textoServConIndicador}</td><td>${debStr}</td><td>$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${variacionHtml}</td><td>${lblComp}</td><td>${lblDeu}</td><td>${btnPagarServ}<button class="btn-editar" onclick="abrirModalEditarServicio('${mov.idGrupo}')">Editar</button> <button class="btn-borrar" onclick="darDeBajaServicio('${mov.idGrupo}')" style="margin-left:5px;">Baja</button></td></tr>`;
         });
 
         document.getElementById('lblTotalCreditos').innerText = `Mío: $${totalCredMio.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}   —   Compartido: $${totalCredCompartido.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
