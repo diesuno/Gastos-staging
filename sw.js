@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-v11.3.0'; // Arreglar cuotas viejas: asignar tarjeta retroactiva y marcar como pagada manualmente
+const CACHE_NAME = 'finanzas-v12.0.0'; // Rediseño: panel lateral, listas en tarjeta y categorías de gasto
 const urlsToCache = [
   './',
   './index.html',
@@ -18,16 +18,16 @@ const urlsToCache = [
   './flujoMensual.js',
   './cierreMensual.js',
   './periodo.js'
-];
+  ];
 
 // Instala la nueva versión
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
-  );
+    .then(cache => {
+      return cache.addAll(urlsToCache);
+    })
+    );
 });
 
 // ESTA ES LA MAGIA: Borra la memoria vieja apenas detecta esta versión
@@ -41,9 +41,9 @@ self.addEventListener('activate', event => {
             return caches.delete(cacheName);
           }
         })
-      );
+        );
     })
-  );
+    );
 });
 
 // Estrategia "Network First": Siempre intenta traer lo más nuevo de internet primero
@@ -52,5 +52,5 @@ self.addEventListener('fetch', event => {
     fetch(event.request).catch(() => {
       return caches.match(event.request);
     })
-  );
+    );
 });
