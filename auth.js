@@ -295,3 +295,35 @@ try {
     mostrarAlerta(traducirErrorAuth(e));
 }
 }
+
+
+// Descarga un .json con todos los datos guardados de la persona — para
+// diagnosticar algo puntual (compartiendolo en el chat) o como respaldo
+// propio. No incluye nada de acceso/contrasena, solo los datos financieros.
+export function exportarDatosDiagnostico() {
+    let datos = {
+        exportadoEl: new Date().toISOString(),
+        perfilUsuario: estadoApp.perfilUsuario,
+        patrimonio: estadoApp.patrimonio,
+        todosLosMovimientos: estadoApp.todosLosMovimientos,
+        suscripciones: estadoApp.suscripciones,
+        inversiones: estadoApp.inversiones,
+        sp500: estadoApp.sp500,
+        historialInversiones: estadoApp.historialInversiones,
+        historialMensual: estadoApp.historialMensual,
+        listaAmigos: estadoApp.listaAmigos,
+        listaTarjetas: estadoApp.listaTarjetas,
+        cotizacionCedear: estadoApp.mercado.spy_ars
+    };
+
+let blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    let hoy = new Date().toISOString().split('T')[0];
+    a.href = url;
+    a.download = `mis_datos_finanzas_${hoy}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
