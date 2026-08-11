@@ -1,13 +1,6 @@
 // ==========================================
 // 🚀 PUNTO DE ENTRADA DE LA APP
 // ==========================================
-// Este archivo:
-// 1) Inicializa cosas puntuales al cargar la página (fechas por defecto).
-// 2) Escucha el estado de sesión de Firebase y decide qué mostrar.
-// 3) Define resetearApp (la función de "blanquear todos mis datos").
-// 4) Expone en "window" las funciones que el HTML llama con onclick="..."
-//    (los módulos ES no exponen nada al scope global por defecto).
-
 import { auth } from './firebase-config.js';
 import { estadoApp, fechaActual } from './estado.js';
 import { ocultarLoaderInicial } from './utilidades.js';
@@ -28,7 +21,8 @@ import {
 import {
     evaluarCamposDinamicosGasto, toggleSelectAmigo, crearPersonaDeuda,
     agregarMovimiento, toggleNuevaTarjeta, actualizarSelectTarjetasDisplay,
-    abrirModalEditarMovimiento, cerrarModalEditarMovimiento, guardarEdicionMovimiento
+    abrirModalEditarMovimiento, cerrarModalEditarMovimiento, guardarEdicionMovimiento,
+    toggleCategoriaPersonalizada
 } from './movimientos.js';
 
 import {
@@ -53,13 +47,17 @@ import {
 
 import { toggleSerieGrafico, setMesesAMostrar } from './grafico.js';
 
-import { inicializarSelectorHistorico, cambiarPestaña, actualizarApp, actualizarFiltrosDetalle, ordenarTabla, aplicarFiltrosMovimientos, limpiarFiltrosMovimientos, aplicarFiltrosCreditos, limpiarFiltrosCreditos } from './render.js';
+import {
+    inicializarSelectorHistorico, cambiarPestaña, actualizarApp, actualizarFiltrosDetalle,
+    ordenarTabla, aplicarFiltrosMovimientos, limpiarFiltrosMovimientos,
+    aplicarFiltrosCreditos, limpiarFiltrosCreditos,
+    inicializarSidebar, toggleSidebar, toggleSidebarMobile
+} from './render.js';
 
-// --- INICIALIZACIÓN DE CAMPOS DE FECHA ---
 document.getElementById('inputFecha').valueAsDate = fechaActual;
 document.getElementById('invFechaNueva').valueAsDate = fechaActual;
+inicializarSidebar();
 
-// --- ESTADO DE SESIÓN ---
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('auth-section').style.display = 'none';
@@ -71,10 +69,11 @@ auth.onAuthStateChanged(user => {
         ocultarLoaderInicial();
         document.getElementById('auth-section').style.display = 'block';
         document.getElementById('main-app').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('sb-mobile-toggle').style.display = 'none';
     }
 });
 
-// --- ZONA DE PELIGRO: RESET TOTAL ---
 async function resetearApp() {
     if(await mostrarConfirmacion("⚠️ PELIGRO CRÍTICO: Se purgarán todos los balances de la nube.", {peligroso: true})) {
         if(await mostrarPrompt("Escribe BORRAR:") === "BORRAR") {
@@ -89,15 +88,6 @@ async function resetearApp() {
     }
 }
 
-// ==========================================
-// 🔗 EXPOSICIÓN A WINDOW
-// Este archivo se carga como <script type="module">, y los módulos ES
-// NO exponen sus funciones al scope global por defecto. Como el HTML
-// sigue usando atributos onclick="..." / onchange="...", necesitamos
-// enganchar acá las funciones que se llaman desde el markup (estático
-// o generado dinámicamente en las tablas). Si en el futuro migramos a
-// addEventListener, esta sección deja de ser necesaria.
-// ==========================================
 window.guardarModoDesdeOnboarding = guardarModoDesdeOnboarding;
 window.loginUsuario = loginUsuario;
 window.registrarUsuario = registrarUsuario;
@@ -121,6 +111,7 @@ window.toggleCampoDiaCobro = toggleCampoDiaCobro;
 window.cambiarPestaña = cambiarPestaña;
 window.actualizarApp = actualizarApp;
 window.evaluarCamposDinamicosGasto = evaluarCamposDinamicosGasto;
+window.toggleCategoriaPersonalizada = toggleCategoriaPersonalizada;
 window.agregarMovimiento = agregarMovimiento;
 window.toggleNuevaTarjeta = toggleNuevaTarjeta;
 window.actualizarSelectTarjetasDisplay = actualizarSelectTarjetasDisplay;
@@ -152,7 +143,6 @@ window.marcarCuotaComoPagada = marcarCuotaComoPagada;
 window.liquidarDeudaIndividual = liquidarDeudaIndividual;
 window.liquidarDeudaGlobal = liquidarDeudaGlobal;
 
-// --- Inversiones (pestaña nueva) ---
 window.toggleMovimientoInversion = toggleMovimientoInversion;
 window.evaluarCamposInversion = evaluarCamposInversion;
 window.evaluarCamposRetiro = evaluarCamposRetiro;
@@ -169,3 +159,6 @@ window.aplicarFiltrosMovimientos = aplicarFiltrosMovimientos;
 window.limpiarFiltrosMovimientos = limpiarFiltrosMovimientos;
 window.aplicarFiltrosCreditos = aplicarFiltrosCreditos;
 window.limpiarFiltrosCreditos = limpiarFiltrosCreditos;
+
+window.toggleSidebar = toggleSidebar;
+window.toggleSidebarMobile = toggleSidebarMobile;
