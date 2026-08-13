@@ -60,14 +60,12 @@ inicializarSidebar();
 
 auth.onAuthStateChanged(user => {
     if (user) {
-        document.getElementById('auth-section').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         inicializarSelectorHistorico();
         inicializarMercado();
         cargarDatosDesdeNube(user.uid);
     } else {
         ocultarLoaderInicial();
-        document.getElementById('auth-section').style.display = 'block';
         document.getElementById('main-app').style.display = 'none';
 document.body.classList.remove('logueado');    }
 });
