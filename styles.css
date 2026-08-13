@@ -6,7 +6,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; color: #2d37
 .container { max-width: 1100px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); position: relative;}
 h1, h2, h3 { color: #1e3a8a; text-align: center; font-weight: 800;}
 
-#auth-section { max-width: 400px; margin: 80px auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 40px rgba(30,58,138,0.08); text-align: center;}
+#auth-section { position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center; background: #f4f7f6; padding: 20px; box-sizing: border-box; } #auth-login-view, #auth-recover-view { max-width: 400px; width: 100%; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 40px rgba(30,58,138,0.08); text-align: center; }: 400px; margin: 80px auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 40px rgba(30,58,138,0.08); text-align: center;}
 .auth-logo { font-size: 2.8em; margin-bottom: 6px; line-height: 1;}
 .auth-subtitle { color: #64748b; margin-top: 0; margin-bottom: 30px; font-size: 0.95em;}
 .auth-group { display: flex; flex-direction: column; text-align: left; margin-bottom: 18px;}
@@ -64,7 +64,7 @@ h1, h2, h3 { color: #1e3a8a; text-align: center; font-weight: 800;}
     transition: width 0.22s ease;
     z-index: 400;
 }
-#sidebar.colapsado { width: var(--sb-ancho-colapsado); }
+#sidebar.colapsado { width: var(--sb-ancho-colapsado); } body.logueado #sidebar { display: flex; }
 
 .sb-perfil { display: flex; align-items: center; gap: 12px; padding: 22px 18px; background: transparent; box-shadow: none; border: none; border-radius: 0; width: 100%; text-align: left; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.12); }
 .sb-perfil:hover { background: rgba(255,255,255,0.08); transform: none; box-shadow: none; }
@@ -161,7 +161,7 @@ body.modo-basico .avanzado-only { display: none !important; }
     #sidebar.abierto-mobile { transform: translateX(0); }
     #sidebar.colapsado { width: var(--sb-ancho); }
     #main-content { padding: 16px; padding-top: 70px; width: 100%; }
-    #sb-mobile-toggle { display: flex; position: fixed; top: 14px; left: 14px; z-index: 450; width: 44px; height: 44px; border-radius: 12px; align-items: center; justify-content: center; background: #1e3a8a; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 1.2em; padding: 0; }
+    body.logueado #sb-mobile-toggle { display: flex; position: fixed; top: 14px; left: 14px; z-index: 450; width: 44px; height: 44px; border-radius: 12px; align-items: center; justify-content: center; background: #1e3a8a; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 1.2em; padding: 0; }
     #sb-overlay.activo { display: block; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 399; }
 }
 
