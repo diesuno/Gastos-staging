@@ -147,6 +147,7 @@ button:hover { background-color: #2563eb; transform: translateY(-1px); box-shado
 .card-row.abierta .card-row-detalle { display: block; padding-top: 14px; }
 .cr-detalles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 10px 16px; margin-bottom: 12px; }
 .cr-detalle-item { display: flex; flex-direction: column; gap: 2px; }
+.cr-badge { flex-shrink: 0; } .badge-deuda { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.72em; font-weight: 700; white-space: nowrap; } .badge-pagado { background: #dcfce7; color: #15803d; } .badge-pendiente { background: #fef3c7; color: #b45309; }
 .cr-detalle-label { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.4px; color: #94a3b8; font-weight: 700; }
 .cr-detalle-valor { font-size: 0.92em; color: #334155; font-weight: 600; }
 .cr-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
