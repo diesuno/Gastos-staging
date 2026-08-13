@@ -140,11 +140,7 @@ function actualizarPerfilEnSidebar() {
     let elAvatar = document.getElementById('sbAvatarInicial');
     if (elNombre) elNombre.innerText = nombre;
     if (elAvatar) elAvatar.innerText = nombre.trim().charAt(0).toUpperCase() || "U";
-    let sidebar = document.getElementById('sidebar');
-    let toggleMobile = document.getElementById('sb-mobile-toggle');
-    if (sidebar) sidebar.style.display = 'flex';
-    if (toggleMobile) toggleMobile.style.display = 'flex';
-}
+document.body.classList.add('logueado');}
 
 export function cargarDatosDesdeNube(uid) {
     db.collection("usuarios").doc(uid).onSnapshot(doc => {
