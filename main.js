@@ -69,9 +69,7 @@ auth.onAuthStateChanged(user => {
         ocultarLoaderInicial();
         document.getElementById('auth-section').style.display = 'block';
         document.getElementById('main-app').style.display = 'none';
-        document.getElementById('sidebar').style.display = 'none';
-        document.getElementById('sb-mobile-toggle').style.display = 'none';
-    }
+document.body.classList.remove('logueado');    }
 });
 
 async function resetearApp() {
