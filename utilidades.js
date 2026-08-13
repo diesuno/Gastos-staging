@@ -22,17 +22,18 @@ export function escapeHTML(texto) {
 // sumado y cuánto de ese grupo está compartido/adeudado con otra persona.
 // Se usa tanto en la tabla de "Flujo Mensual" como en "Detalle Gastos".
 export function agruparMovimientosPorGrupo(movimientos) {
-    let gruposUI = {};
+let     gruposUI = {};
     movimientos.forEach(mov => {
         if (mov.tipo === "Cuenta Cobrar") return;
         if (!gruposUI[mov.idGrupo]) {
-            gruposUI[mov.idGrupo] = { ...mov, montoTotalAgrupado: 0, esCompartido: "NO", montoAdeudado: 0, conceptoOriginal: mov.concepto.replace(/^Adelanto a .*?: /, '') };
+            gruposUI[mov.idGrupo] = { ...mov, montoTotalAgrupado: 0, esCompartido: "NO", montoAdeudado: 0, deudaPendiente: false, conceptoOriginal: mov.concepto.replace(/^Adelanto a .*?: /, '') };
         }
         gruposUI[mov.idGrupo].montoTotalAgrupado += mov.monto;
     });
     movimientos.forEach(mov => {
         if (mov.tipo === "Cuenta Cobrar" && gruposUI[mov.idGrupo]) {
             gruposUI[mov.idGrupo].esCompartido = "SÍ"; gruposUI[mov.idGrupo].montoAdeudado += mov.monto;
+            if (mov.estado !== "Saldado") gruposUI[mov.idGrupo].deudaPendiente = true;
         }
     });
     return gruposUI;
