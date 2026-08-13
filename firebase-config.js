@@ -2,7 +2,7 @@
 // ⚙️ CONFIGURACIÓN DE FIREBASE
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyB1nEj7Tv9bd6DNjQlq8OYZ7Hud9Y0G6kM",
+    apiKey: "AIzaSyB1nEj7Tv9bd6DNjQlq0OYZ7Hud9Y0G6kM",
     authDomain: "gastos-staging.firebaseapp.com",
     projectId: "gastos-staging",
     storageBucket: "gastos-staging.firebasestorage.app",
