@@ -9,9 +9,7 @@ import { renderizarGrafico, seriesGrafico } from './grafico.js';
 import { guardarDatosEnNube } from './auth.js';
 import { obtenerKeyPeriodoDeFecha } from './periodo.js';
 
-// Tarjeta de fila: cada "fila" es una tarjeta con lo mínimo a la vista y un
-// botón (i) que despliega el resto de los datos y las acciones.
-function tarjetaFila({ titulo, subtitulo, monto, montoColor, detalles, acciones }) {
+function tarjetaFila({ titulo, subtitulo, monto, montoColor, badge, detalles, acciones }) {
     let detallesHtml = (detalles || []).filter(d => d).map(d =>
         `<div class="cr-detalle-item"><span class="cr-detalle-label">${d.label}</span><span class="cr-detalle-valor">${d.value}</span></div>`
                                                            ).join('');
@@ -21,6 +19,7 @@ function tarjetaFila({ titulo, subtitulo, monto, montoColor, detalles, acciones 
     <div class="cr-titulo">${titulo}</div>
     <div class="cr-subtitulo">${subtitulo}</div>
     </div>
+    ${badge ? `<div class="cr-badge">${badge}</div>` : ''}
     <div class="cr-monto"${montoColor ? ` style="color:${montoColor};"` : ''}>${monto}</div>
     <button type="button" class="btn-info" onclick="event.stopPropagation(); this.closest('.card-row').classList.toggle('abierta')" aria-label="Ver detalles">i</button>
     </div>
@@ -31,8 +30,23 @@ function tarjetaFila({ titulo, subtitulo, monto, montoColor, detalles, acciones 
     </div>`;
 }
 
-// Barra lateral: el estado colapsado se guarda en localStorage (preferencia
-// del dispositivo, no un dato financiero).
+function estadoDeudaInfo(mov, keyMesActual) {
+    if (mov.esCompartido !== "SÍ") return null;
+    if (mov.metodo === "SERVICIO") {
+        let susc = estadoApp.suscripciones.find(s => s.id === mov.idGrupo);
+        return (susc && susc.pagosAmigo && susc.pagosAmigo.includes(keyMesActual)) ? 'SALDADA' : 'PENDIENTE';
+    }
+    let deuda = estadoApp.todosLosMovimientos.find(m => m.idGrupo === mov.idGrupo && m.tipo === "Cuenta Cobrar" && m.concepto.includes(mov.conceptoOriginal));
+    if (!deuda) return null;
+    return deuda.estado === "Saldado" ? 'SALDADA' : 'PENDIENTE';
+}
+
+function estadoDeudaBadge(estado) {
+    if (estado === 'SALDADA') return '<span class="badge-deuda badge-pagado">✓ Abonado</span>';
+    if (estado === 'PENDIENTE') return '<span class="badge-deuda badge-pendiente">Pendiente</span>';
+    return '';
+}
+
 export function inicializarSidebar() {
     let colapsado = localStorage.getItem('sidebarColapsado') === '1';
     let sidebar = document.getElementById('sidebar');
@@ -218,14 +232,18 @@ if (esAvanzado) {
         let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
         let mtdText = mov.metodo === "CREDITO" ? "💳 Crédito" : (mov.metodo === "SERVICIO" ? "🔌 Servicio" : (mov.metodo === "LIQUIDACION" ? "🔄 Liquidación" : "💵 En el Acto"));
         let lblComp = mov.esCompartido === "SÍ" ? "Sí" : "No";
-        let lblDeu = mov.montoAdeudado > 0 ? `$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` : "—";
+        let estadoDeuda = estadoDeudaInfo(mov, estadoApp.keyMesActualGlobal);
+        let lblDeu = estadoDeuda === 'SALDADA' ? '✓ Pagado' : (mov.montoAdeudado > 0 ? `$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` : "—");
         let esEditable = ((mov.metodo === "EN_EL_ACTO" || mov.metodo === "LIQUIDACION") && !mov.esVirtual);
         let btnEditar = esEditable ? `<button class="btn-editar" onclick="abrirModalEditarMovimiento('${mov.id}')">Editar</button>` : '';
         let btnBorrar = `<button class="btn-borrar" onclick="${mov.esVirtual ? `darDeBajaServicio('${mov.idGrupo}')` : `borrarMovimientoReal('${mov.idGrupo}')`}">Eliminar</button>`;
+        let esIngreso = mov.tipo === "Ingreso";
         tabla.innerHTML += tarjetaFila({
             titulo: escapeHTML(mov.conceptoOriginal),
             subtitulo: `${ff} · ${mtdText}`,
-            monto: `$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`,
+            monto: `${esIngreso ? '▲' : '▼'} $${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`,
+            montoColor: esIngreso ? '#10b981' : '#ef4444',
+            badge: estadoDeudaBadge(estadoDeuda),
             detalles: [
                 { label: 'Compartido', value: lblComp },
                 { label: 'Deuda asociada', value: lblDeu },
@@ -253,10 +271,12 @@ if (esAvanzado) {
 
     filas.forEach(mov => {
         let f = new Date(mov.fecha + 'T00:00:00'); let ff = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
+        let esIngreso = mov.tipo === "Ingreso";
         tabla.innerHTML += tarjetaFila({
             titulo: escapeHTML(mov.concepto),
             subtitulo: `${ff} · ${mov.tipo}`,
-            monto: `$${mov.monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`,
+            monto: `${esIngreso ? '▲' : '▼'} $${mov.monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`,
+            montoColor: esIngreso ? '#10b981' : '#ef4444',
             detalles: [
                 { label: 'Categoría', value: mov.categoria ? escapeHTML(mov.categoria) : '—' }
                 ],
@@ -265,7 +285,6 @@ if (esAvanzado) {
     });
 }
 
-// RENDER DETALLE GASTOS (SOLO AVANZADO)
 if (esAvanzado) {
     let tbCredito = document.getElementById('tablaCreditos'); tbCredito.innerHTML = '';
     let tbServ = document.getElementById('tablaServicios'); tbServ.innerHTML = '';
@@ -292,7 +311,8 @@ if (esAvanzado) {
     filasCredito.forEach(mov => {
         if (!mov.pagado) { totalCredMio += mov.montoTotalAgrupado; totalCredCompartido += mov.montoAdeudado; }
         let lblComp = mov.esCompartido === "SÍ" ? "Sí" : "No";
-        let lblDeu = mov.montoAdeudado > 0 ? `$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` : "—";
+        let estadoDeuda = estadoDeudaInfo(mov, estadoApp.keyMesActualGlobal);
+        let lblDeu = estadoDeuda === 'SALDADA' ? '✓ Pagado' : (mov.montoAdeudado > 0 ? `$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` : "—");
         let saldoRest = mov.deudaRestante || 0;
         let titulo = (mov.pagado ? '✅ ' : '') + escapeHTML(mov.conceptoOriginal);
         let subtitulo = `Cuota ${mov.cuotaActual}/${mov.cuotasTotales} · ${mov.tarjeta ? escapeHTML(mov.tarjeta) : 'Sin tarjeta asignada'}`;
@@ -301,6 +321,7 @@ if (esAvanzado) {
         tbCredito.innerHTML += tarjetaFila({
             titulo, subtitulo,
             monto: `$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`,
+            badge: estadoDeudaBadge(estadoDeuda),
             detalles: [
                 { label: 'Saldo restante', value: `$${saldoRest.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` },
                 { label: 'Compartido', value: lblComp },
@@ -338,7 +359,8 @@ if (esAvanzado) {
         } else { variacionTxt = `Nuevo`; }
 
                            let lblComp = mov.esCompartido === "SÍ" ? "Sí" : "No";
-        let lblDeu = mov.montoAdeudado > 0 ? `$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` : "—";
+        let estadoDeuda = estadoDeudaInfo(mov, estadoApp.keyMesActualGlobal);
+        let lblDeu = estadoDeuda === 'SALDADA' ? '✓ Pagado' : (mov.montoAdeudado > 0 ? `$${mov.montoAdeudado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` : "—");
         let debStr = mov.debito === "SI" ? "Sí" : "No";
         let titulo = (mov.pagado ? '✅ ' : '') + escapeHTML(mov.conceptoOriginal);
         let subtitulo = `Débito automático: ${debStr}`;
@@ -346,6 +368,7 @@ if (esAvanzado) {
         tbServ.innerHTML += tarjetaFila({
             titulo, subtitulo,
             monto: `$${mov.montoTotalAgrupado.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`,
+            badge: estadoDeudaBadge(estadoDeuda),
             detalles: [
                 { label: 'Variación vs. mes anterior', value: variacionTxt },
                 { label: 'Compartido', value: lblComp },
