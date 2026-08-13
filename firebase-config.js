@@ -2,12 +2,12 @@
 // ⚙️ CONFIGURACIÓN DE FIREBASE
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyD6b5jRsGPzKmwB-M-cDbyn1qQCAdN5ecE",
-    authDomain: "gastos-a56f7.firebaseapp.com",
-    projectId: "gastos-a56f7",
-    storageBucket: "gastos-a56f7.firebasestorage.app",
-    messagingSenderId: "537729737132",
-    appId: "1:537729737132:web:2423ab40ff20fef30b9a09"
+    apiKey: "AIzaSyB1nEj7Tv9bd6DNjQlq8OYZ7Hud9Y0G6kM",
+    authDomain: "gastos-staging.firebaseapp.com",
+    projectId: "gastos-staging",
+    storageBucket: "gastos-staging.firebasestorage.app",
+    messagingSenderId: "1038565911737",
+    appId: "1:1038565911737:web:78422ba8e4f1911fcebf68"
 };
 // ==========================================
 
