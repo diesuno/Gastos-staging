@@ -158,3 +158,17 @@ return {
     dispBasico: ing - (gastosFijosBasic + gastosVariablesBasic) - gastosLiquidacion,
 };
 }
+
+
+// Devuelve el monto TOTAL del servicio (lo que sale realmente del bolsillo
+// al pagarle al proveedor), independientemente de cómo se divida la deuda.
+// A diferencia de calcularMiParteSuscripcion() — que sirve para calcular
+// Obligaciones — este se usa en "Pagar Resumen" y "Pagar Servicio".
+export function calcularMontoTotalSuscripcion(susc, keyPeriodo) {
+    let montoActivo = 0;
+    let diffKeys = Object.keys(susc.montosPorMes).sort();
+    for (let key of diffKeys) {
+        if (key <= keyPeriodo) montoActivo = susc.montosPorMes[key];
+    }
+    return montoActivo;
+}
