@@ -1,56 +1,52 @@
-const CACHE_NAME = 'finanzas-v12.0.0'; // Rediseño: panel lateral, listas en tarjeta y categorías de gasto
+const CACHE_NAME = 'finanzas-v12.0.0';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './styles.css',
-  './modales.js',
   './main.js',
   './estado.js',
-  './firebase-config.js',
-  './utilidades.js',
   './auth.js',
-  './movimientos.js',
-  './billetera.js',
-  './deudas.js',
   './render.js',
-  './grafico.js',
+  './movimientos.js',
   './flujoMensual.js',
   './cierreMensual.js',
-  './periodo.js'
+  './deudas.js',
+  './billetera.js',
+  './grafico.js',
+  './modales.js',
+  './utilidades.js',
+  './periodo.js',
+  './icono-192.png',
+  './icono-512.png',
   ];
 
-// Instala la nueva versión
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-    .then(cache => {
-      return cache.addAll(urlsToCache);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
     );
 });
 
-// ESTA ES LA MAGIA: Borra la memoria vieja apenas detecta esta versión
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Borrando caché antigua:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-        );
-    })
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+                       )
     );
 });
 
-// Estrategia "Network First": Siempre intenta traer lo más nuevo de internet primero
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-    );
+  const url = new URL(event.request.url);
+
+                      // Solo cachear pedidos del propio origen.
+                      // Firebase, Firestore y cualquier CDN externo pasan directo
+                      // para no bloquear datos en tiempo real.
+                      if (url.origin !== self.location.origin) {
+                        event.respondWith(fetch(event.request));
+                        return;
+                      }
+
+                      event.respondWith(
+                        caches.match(event.request).then(cached => cached || fetch(event.request))
+                        );
 });
