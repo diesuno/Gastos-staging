@@ -82,12 +82,8 @@ function toggleMostrarCampoPassword(idInput, idBoton) {
     boton.innerHTML = vaAMostrarla ? SVG_OJO_TACHADO : SVG_OJO_ABIERTO;
     boton.setAttribute('aria-label', vaAMostrarla ? 'Ocultar contraseña' : 'Mostrar contraseña');
 }
-export function toggleMostrarRegPassword() {
-    toggleMostrarCampoPassword('regPassword', 'btnMostrarRegPassword');
-}
-export function toggleMostrarRegPasswordConfirmar() {
-    toggleMostrarCampoPassword('regPasswordConfirmar', 'btnMostrarRegPasswordConfirmar');
-}
+export function toggleMostrarRegPassword() { toggleMostrarCampoPassword('regPassword', 'btnMostrarRegPassword'); }
+export function toggleMostrarRegPasswordConfirmar() { toggleMostrarCampoPassword('regPasswordConfirmar', 'btnMostrarRegPasswordConfirmar'); }
 
 export function toggleMenuUsuario() {
     let dropdown = document.getElementById('userMenuDropdown');
@@ -97,17 +93,11 @@ export function toggleMenuUsuario() {
 document.addEventListener('click', (e) => {
     let menu = document.querySelector('.user-menu');
     let dropdown = document.getElementById('userMenuDropdown');
-    if (dropdown && dropdown.style.display === 'block' && menu && !menu.contains(e.target)) {
-        dropdown.style.display = 'none';
-    }
+    if (dropdown && dropdown.style.display === 'block' && menu && !menu.contains(e.target)) dropdown.style.display = 'none';
 });
 
-export function abrirModalPerfil() {
-    document.getElementById('modal-perfil').style.display = 'flex';
-}
-export function cerrarModalPerfil() {
-    document.getElementById('modal-perfil').style.display = 'none';
-}
+export function abrirModalPerfil() { document.getElementById('modal-perfil').style.display = 'flex'; }
+export function cerrarModalPerfil() { document.getElementById('modal-perfil').style.display = 'none'; }
 
 export function mostrarVistaRecuperar() {
     document.getElementById('auth-login-view').style.display = 'none';
@@ -117,20 +107,15 @@ export function mostrarVistaRecuperar() {
     let emailLogin = document.getElementById('authEmail').value.trim();
     if (emailLogin) document.getElementById('recoverEmail').value = emailLogin;
 }
-
 export function volverALogin() {
     document.getElementById('auth-recover-view').style.display = 'none';
     document.getElementById('auth-login-view').style.display = 'block';
 }
-
 export function enviarRecuperacionPassword() {
     let email = document.getElementById('recoverEmail').value.trim();
     if (!email) return mostrarAlerta("Escribí tu email.");
     auth.sendPasswordResetEmail(email)
-    .then(() => {
-        document.getElementById('auth-recover-form').style.display = 'none';
-        document.getElementById('auth-recover-exito').style.display = 'block';
-    })
+    .then(() => { document.getElementById('auth-recover-form').style.display = 'none'; document.getElementById('auth-recover-exito').style.display = 'block'; })
     .catch(e => mostrarAlerta(traducirErrorAuth(e)));
 }
 
@@ -140,10 +125,21 @@ function actualizarPerfilEnSidebar() {
     let elAvatar = document.getElementById('sbAvatarInicial');
     if (elNombre) elNombre.innerText = nombre;
     if (elAvatar) elAvatar.innerText = nombre.trim().charAt(0).toUpperCase() || "U";
-document.body.classList.add('logueado');}
+}
+
+// oyente activo de Firestore (se guarda para poder desconectarlo antes de crear uno nuevo)
+let desconectarOyenteDatos = null;
 
 export function cargarDatosDesdeNube(uid) {
-    db.collection("usuarios").doc(uid).onSnapshot(doc => {
+    // FIX: desconectar el oyente anterior si existe (evita duplicados al renovar token)
+if (desconectarOyenteDatos) {
+    desconectarOyenteDatos();
+    desconectarOyenteDatos = null;
+}
+
+const unsubscribe = db.collection("usuarios").doc(uid).onSnapshot(doc => {
+    try {
+        if (doc.metadata.hasPendingWrites) return;
         if (doc.exists) {
             const data = doc.data();
             estadoApp.todosLosMovimientos = data.todosLosMovimientos || [];
@@ -152,15 +148,9 @@ export function cargarDatosDesdeNube(uid) {
             estadoApp.inversiones = data.inversiones || [];
             estadoApp.listaAmigos = data.listaAmigos || [];
             estadoApp.listaTarjetas = data.listaTarjetas || [];
-
-        if (data.perfilUsuario) {
-            estadoApp.perfilUsuario = data.perfilUsuario;
-        }
-            if (typeof estadoApp.perfilUsuario.modo === "undefined") {
-                estadoApp.perfilUsuario.modo = "";
-            }
-
-        estadoApp.sp500 = data.sp500 || { nominales: 0 };
+            if (data.perfilUsuario) estadoApp.perfilUsuario = data.perfilUsuario;
+            if (typeof estadoApp.perfilUsuario.modo === "undefined") estadoApp.perfilUsuario.modo = "";
+            estadoApp.sp500 = data.sp500 || { nominales: 0 };
             let entradasSpViejas = estadoApp.inversiones.filter(inv => inv.instrumento === "S&P 500");
             if (entradasSpViejas.length > 0) {
                 entradasSpViejas.forEach(inv => { estadoApp.sp500.nominales += (inv.nominales || 0); });
@@ -171,36 +161,45 @@ export function cargarDatosDesdeNube(uid) {
             if (data.cotizacionCedear) estadoApp.mercado.spy_ars = data.cotizacionCedear;
         }
 
-                                                  actualizarPerfilEnSidebar();
+    actualizarPerfilEnSidebar();
         document.getElementById('profileNameInput').value = estadoApp.perfilUsuario.nombre;
-
-                                                  let diaCobro = estadoApp.perfilUsuario.diaCobro || 0;
+        let diaCobro = estadoApp.perfilUsuario.diaCobro || 0;
         document.getElementById('chkCicloPersonalizado').checked = diaCobro > 0;
         document.getElementById('inputDiaCobro').value = diaCobro > 0 ? diaCobro : '';
         toggleCampoDiaCobro();
 
-                                                  if (estadoApp.perfilUsuario.modo === "") {
-                                                      document.getElementById('onboarding-modal').style.display = 'flex';
-                                                  } else {
-                                                      document.getElementById('onboarding-modal').style.display = 'none';
-                                                      document.getElementById('profileModoInput').value = estadoApp.perfilUsuario.modo;
-                                                  }
+    if (estadoApp.perfilUsuario.modo === "") {
+        document.getElementById('onboarding-modal').style.display = 'flex';
+    } else {
+        document.getElementById('onboarding-modal').style.display = 'none';
+        document.getElementById('profileModoInput').value = estadoApp.perfilUsuario.modo;
+    }
 
-                                                  actualizarSelectAmigosDisplay();
+    actualizarSelectAmigosDisplay();
         aplicarFiltrosDeModo();
         if (reconstruirHistorialPesos()) guardarDatosEnNube();
         actualizarApp();
+    } catch(err) {
+        console.error('Error al procesar datos de Firestore:', err);
+        mostrarAlerta('Hubo un problema al cargar tus datos. Recargá la página.');
+    } finally {
         ocultarLoaderInicial();
-    });
+    }
+}, err => {
+    console.error('Error en onSnapshot:', err);
+    ocultarLoaderInicial();
+});
+
+desconectarOyenteDatos = unsubscribe;
 }
 
 export function guardarDatosEnNube() {
     if(auth.currentUser) db.collection("usuarios").doc(auth.currentUser.uid).set({
         todosLosMovimientos: estadoApp.todosLosMovimientos, suscripciones: estadoApp.suscripciones,
-        patrimonio: estadoApp.patrimonio, inversiones: estadoApp.inversiones, listaAmigos: estadoApp.listaAmigos, listaTarjetas: estadoApp.listaTarjetas, perfilUsuario: estadoApp.perfilUsuario,
+        patrimonio: estadoApp.patrimonio, inversiones: estadoApp.inversiones, listaAmigos: estadoApp.listaAmigos,
+        listaTarjetas: estadoApp.listaTarjetas, perfilUsuario: estadoApp.perfilUsuario,
         sp500: estadoApp.sp500, historialInversiones: estadoApp.historialInversiones,
-        historialMensual: estadoApp.historialMensual,
-        cotizacionCedear: estadoApp.mercado.spy_ars
+        historialMensual: estadoApp.historialMensual, cotizacionCedear: estadoApp.mercado.spy_ars
     }, { merge: true });
 }
 
@@ -219,10 +218,8 @@ export function toggleCampoDiaCobro() {
 export function guardarCambiosDesdePerfil() {
     let n = document.getElementById('profileNameInput').value;
     if(n) estadoApp.perfilUsuario.nombre = n;
-
-estadoApp.perfilUsuario.modo = document.getElementById('profileModoInput').value;
-
-let cicloActivo = document.getElementById('chkCicloPersonalizado').checked;
+    estadoApp.perfilUsuario.modo = document.getElementById('profileModoInput').value;
+    let cicloActivo = document.getElementById('chkCicloPersonalizado').checked;
     if (cicloActivo) {
         let dia = parseInt(document.getElementById('inputDiaCobro').value, 10);
         if (!dia || dia < 1 || dia > 28) return mostrarAlerta("El día de cobro tiene que ser un número entre 1 y 28.");
@@ -230,43 +227,34 @@ let cicloActivo = document.getElementById('chkCicloPersonalizado').checked;
     } else {
         estadoApp.perfilUsuario.diaCobro = 0;
     }
-
-guardarDatosEnNube();
+    guardarDatosEnNube();
     aplicarFiltrosDeModo();
     actualizarApp();
     actualizarPerfilEnSidebar();
     mostrarAlerta("Perfil actualizado correctamente.");
 }
-
-export function guardarNombrePerfil() {
-    guardarCambiosDesdePerfil();
-}
+export function guardarNombrePerfil() { guardarCambiosDesdePerfil(); }
 
 export function aplicarFiltrosDeModo() {
     let esAvanzado = (estadoApp.perfilUsuario.modo === "AVANZADO");
-
-if (esAvanzado) {
-    document.body.classList.remove('modo-basico');
-} else {
-    document.body.classList.add('modo-basico');
-
-    if (document.getElementById('tab-detalle-gastos').classList.contains('active')) {
-        document.querySelector('.sb-link').click();
+    if (esAvanzado) {
+        document.body.classList.remove('modo-basico');
+    } else {
+        document.body.classList.add('modo-basico');
+        if (document.getElementById('tab-detalle-gastos').classList.contains('active')) {
+            document.querySelector('.sb-link').click();
+        }
     }
-}
-
-document.getElementById('lblConceptoTexto').innerText = esAvanzado ? "Texto" : "Concepto";
+    document.getElementById('lblConceptoTexto').innerText = esAvanzado ? "Texto" : "Concepto";
     document.getElementById('inputConcepto').placeholder = esAvanzado ? "Ej: Compra Coto, Cena..." : "Ej: Sueldo, Supermercado...";
-
-if(!esAvanzado) {
-    document.getElementById('tituloDeudaUnica').style.display = "block";
-    document.getElementById('tablaDeudaUnica').style.display = "block";
-} else {
-    document.getElementById('tituloDeudaUnica').style.display = "none";
-    document.getElementById('tablaDeudaUnica').style.display = "none";
-}
-
-evaluarCamposDinamicosGasto();
+    if(!esAvanzado) {
+        document.getElementById('tituloDeudaUnica').style.display = "block";
+        document.getElementById('tablaDeudaUnica').style.display = "block";
+    } else {
+        document.getElementById('tituloDeudaUnica').style.display = "none";
+        document.getElementById('tablaDeudaUnica').style.display = "none";
+    }
+    evaluarCamposDinamicosGasto();
 }
 
 export async function cambiarPasswordPerfil() {
@@ -280,10 +268,15 @@ export async function eliminarCuenta() {
     let confirmacion = await mostrarPrompt("Para confirmar, escribí ELIMINAR:");
     if (confirmacion !== "ELIMINAR") return;
 
+// FIX: reautenticar antes de borrar para evitar que el proceso quede a medias
 let user = auth.currentUser;
     if (!user) return;
+    let passActual = await mostrarPrompt("Por seguridad, ingresá tu contraseña actual:");
+    if (!passActual) return;
 
 try {
+    let credencial = firebase.auth.EmailAuthProvider.credential(user.email, passActual);
+    await user.reauthenticateWithCredential(credencial);
     await db.collection("usuarios").doc(user.uid).delete();
     await user.delete();
     mostrarAlerta("Tu cuenta fue eliminada. ¡Gracias por haber usado la app!");
@@ -292,10 +285,6 @@ try {
 }
 }
 
-
-// Descarga un .json con todos los datos guardados de la persona — para
-// diagnosticar algo puntual (compartiendolo en el chat) o como respaldo
-// propio. No incluye nada de acceso/contrasena, solo los datos financieros.
 export function exportarDatosDiagnostico() {
     let datos = {
         exportadoEl: new Date().toISOString(),
@@ -311,15 +300,11 @@ export function exportarDatosDiagnostico() {
         listaTarjetas: estadoApp.listaTarjetas,
         cotizacionCedear: estadoApp.mercado.spy_ars
     };
-
-let blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+    let blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
     let url = URL.createObjectURL(blob);
     let a = document.createElement('a');
     let hoy = new Date().toISOString().split('T')[0];
-    a.href = url;
-    a.download = `mis_datos_finanzas_${hoy}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = `mis_datos_finanzas_${hoy}.json`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
 }
