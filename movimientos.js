@@ -194,7 +194,7 @@ if (metodoP === "SERVICIO" && tipo !== "Ingreso") {
         id: generarId(), idGrupo: idGrupoPrincipal, monto: montoPorCuota, tipo: tipo, concepto: conceptoF,
         fecha: fechaF, metodo: metodoP, cuotaActual: i+1, cuotasTotales: cuotas, tarjeta: tarjeta, categoria: categoria,
         pagado: false,
-        deudaRestante: montoTotal - (montoPorCuota * (i + 1)), esVirtual: false
+        montoTotalCuota: montoTotal, deudaRestante: montoTotal - (montoPorCuota * (i + 1)), esVirtual: false
     };
 
     if(tipo === "Ingreso") {
