@@ -191,7 +191,7 @@ if (metodoP === "SERVICIO" && tipo !== "Ingreso") {
         let conceptoF = (cuotas > 1) ? `${concepto} (${i+1}/${cuotas})` : concepto;
 
     let objBase = {
-        id: generarId(), idGrupo: idGrupoPrincipal, monto: montoPorCuota, tipo: tipo, concepto: conceptoF,
+        id: generarId(), idGrupo: idGrupoPrincipal, monto: montoPorCuota, montoTotalCuota: montoPorCuota, tipo: tipo, concepto: conceptoF,
         fecha: fechaF, metodo: metodoP, cuotaActual: i+1, cuotasTotales: cuotas, tarjeta: tarjeta, categoria: categoria,
         pagado: false,
         montoTotalCuota: montoTotal, deudaRestante: montoTotal - (montoPorCuota * (i + 1)), esVirtual: false
