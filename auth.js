@@ -125,6 +125,7 @@ function actualizarPerfilEnSidebar() {
     let elAvatar = document.getElementById('sbAvatarInicial');
     if (elNombre) elNombre.innerText = nombre;
     if (elAvatar) elAvatar.innerText = nombre.trim().charAt(0).toUpperCase() || "U";
+document.body.classList.add('logueado');
 }
 
 // oyente activo de Firestore (se guarda para poder desconectarlo antes de crear uno nuevo)
