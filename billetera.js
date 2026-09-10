@@ -123,7 +123,7 @@ let sacar = document.getElementById('extSacoDePlataforma').checked;
 document.getElementById('lblExplicacionExtraccion').innerText = sacar
 ? "Salen de la app definitivamente (los gastaste, los vendiste fuera del sistema, etc.)."
 : "Se convierten a Pesos y quedan disponibles dentro de la app, al dólar oficial de hoy.";
-}}
+}
 
 // --- FORMULARIO: mostrar Cotización o Cantidad al comprar Dólares ---
 export function toggleModoDolar() {
