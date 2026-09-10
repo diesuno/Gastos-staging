@@ -47,6 +47,16 @@ function estadoDeudaBadge(estado) {
     return '';
 }
 
+const ICONOS_CATEGORIA = {
+'Supermercado': '🛒', 'Comida afuera': '🍔', 'Transporte': '🚗', 'Servicios': '🔌',
+'Salud': '💊', 'Entretenimiento': '🎬', 'Ropa': '👕', 'Educación': '📚',
+'Hogar': '🏠', 'Otros': '📦'
+};
+function iconoCategoria(categoria) {
+if (!categoria) return '';
+return (ICONOS_CATEGORIA[categoria] || '✏️') + ' ';
+}
+
 export function inicializarSidebar() {
     let colapsado = localStorage.getItem('sidebarColapsado') === '1';
     let sidebar = document.getElementById('sidebar');
@@ -247,7 +257,7 @@ if (esAvanzado) {
             detalles: [
                 { label: 'Compartido', value: lblComp },
                 { label: 'Deuda asociada', value: lblDeu },
-                { label: 'Categoría', value: mov.categoria ? escapeHTML(mov.categoria) : '—' }
+                { label: 'Categoría', value: mov.categoria ? (iconoCategoria(mov.categoria) + escapeHTML(mov.categoria)) : '—' }
                 ],
             acciones: `${btnEditar} ${btnBorrar}`
         });
@@ -278,7 +288,7 @@ if (esAvanzado) {
             monto: `${esIngreso ? '▲' : '▼'} $${mov.monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}`,
             montoColor: esIngreso ? '#10b981' : '#ef4444',
             detalles: [
-                { label: 'Categoría', value: mov.categoria ? escapeHTML(mov.categoria) : '—' }
+                { label: 'Categoría', value: mov.categoria ? (iconoCategoria(mov.categoria) + escapeHTML(mov.categoria)) : '—' }
                 ],
             acciones: `<button class="btn-editar" onclick="abrirModalEditarMovimiento('${mov.id}')">Editar</button> <button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">Eliminar</button>`
         });
@@ -326,7 +336,7 @@ if (esAvanzado) {
                 { label: 'Saldo restante', value: `$${saldoRest.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}` },
                 { label: 'Compartido', value: lblComp },
                 { label: 'Deuda asociada', value: lblDeu },
-                { label: 'Categoría', value: mov.categoria ? escapeHTML(mov.categoria) : '—' }
+                { label: 'Categoría', value: mov.categoria ? (iconoCategoria(mov.categoria) + escapeHTML(mov.categoria)) : '—' }
                 ],
             acciones: `${btnMarcarPagada} ${btnAsignar} <button class="btn-borrar" onclick="borrarMovimientoReal('${mov.idGrupo}')">Eliminar todo</button>`
         });
@@ -373,7 +383,7 @@ if (esAvanzado) {
                 { label: 'Variación vs. mes anterior', value: variacionTxt },
                 { label: 'Compartido', value: lblComp },
                 { label: 'Deuda asociada', value: lblDeu },
-                { label: 'Categoría', value: mov.categoria ? escapeHTML(mov.categoria) : '—' }
+                { label: 'Categoría', value: mov.categoria ? (iconoCategoria(mov.categoria) + escapeHTML(mov.categoria)) : '—' }
                 ],
             acciones: `${btnPagarServ} <button class="btn-editar" onclick="abrirModalEditarServicio('${mov.idGrupo}')">Editar</button> <button class="btn-borrar" onclick="darDeBajaServicio('${mov.idGrupo}')">Baja</button>`
         });
