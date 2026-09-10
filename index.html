@@ -517,7 +517,6 @@ window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.j
 <select id="invMovimiento" onchange="toggleMovimientoInversion()">
 <option value="INVERSION">Inversión</option>
 <option value="RETIRO">Retiro</option>
-<option value="EXTRACCION">Extracción</option>
 </select>
 </div>
 
@@ -556,8 +555,18 @@ window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.j
 </div>
 </div>
 
-<!-- SECCIÓN RETIRO (solo S&P 500 — los dólares no se retiran directo, son capital para invertir) -->
+<!-- SECCIÓN RETIRO (unificada: podés retirar del S&P 500 -que vuelve a Pesos o Dólares- o de tus Dólares -que salen de la plataforma o se convierten a Pesos-) -->
 <div id="seccionRetiro" style="display:none;">
+<div class="form-grid">
+<div class="form-group"><label for="retInstrumento">¿Qué querés retirar?</label>
+<select id="retInstrumento" onchange="toggleInstrumentoRetiro()">
+<option value="SP500">S&P 500</option>
+<option value="DOLARES">Dólares</option>
+</select>
+</div>
+</div>
+
+<div id="boxRetiroSp500">
 <h3 style="margin-top:0; color:#334155;">Retiro de S&P 500</h3>
 <div class="form-grid">
 <div class="form-group"><label for="retDestino">¿A dónde va la plata?</label>
@@ -580,14 +589,19 @@ window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.j
 </div>
 </div>
 
-<!-- SECCIÓN EXTRACCIÓN (solo Dólares — sacan plata de la app definitivamente) -->
-<div id="seccionExtraccion" style="display:none;">
-<h3 style="margin-top:0; color:#334155;">Extracción de Dólares</h3>
-<p style="font-size:0.85em; color:#64748b; margin-top:-10px;">Para cuando esa plata sale de la app definitivamente (la gastaste, la vendiste fuera del sistema, etc.).</p>
+<div id="boxRetiroDolares" style="display:none;">
+<h3 style="margin-top:0; color:#334155;">Retiro de Dólares</h3>
 <div class="form-grid">
 <div class="form-group"><label for="extMontoDolares">Monto (US$)</label><input type="number" step="any" id="extMontoDolares"></div>
 <div class="form-group"><label for="extMotivo">Motivo</label><input type="text" id="extMotivo" placeholder="Ej: Retiro para viaje"></div>
-<button style="background-color: #ef4444; color: white; height:46px;" onclick="ejecutarExtraccion()">Extraer</button>
+<div class="form-group" style="grid-column: 1 / -1;">
+<label style="display:flex; align-items:center; gap:8px; font-weight:600; margin-bottom:8px;">
+<input type="checkbox" id="extSacoDePlataforma" checked onchange="toggleExplicacionExtraccion()"> Los saco de la plataforma
+</label>
+<span class="porcentaje" id="lblExplicacionExtraccion">Salen de la app definitivamente (los gastaste, los vendiste fuera del sistema, etc.).</span>
+</div>
+
+<button style="background-color: #ef4444; color: white; height:46px;" onclick="ejecutarExtraccion()">Confirmar</button>
 </div>
 </div>
 </div>
