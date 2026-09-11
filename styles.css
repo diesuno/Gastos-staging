@@ -123,6 +123,7 @@ body:not(.logueado) #auth-section { display: flex; }
 .form-section { background: #f8fafc; padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
 .form-group { display: flex; flex-direction: column; min-width: 0; }
 input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1em; background: white; color: #334155; transition: border-color 0.2s, box-shadow 0.2s; outline: none; width: 100%; box-sizing: border-box;}
+input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; padding: 0; flex-shrink: 0; accent-color: #3b82f6; }
 input:focus, select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 
 button { background-color: #3b82f6; color: white; padding: 14px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1em; transition: 0.2s; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);}
