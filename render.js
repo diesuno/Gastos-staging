@@ -431,6 +431,39 @@ function poblarFiltroAnioDetalle() {
     if ([...sel.options].some(o => o.value === valorPrevio)) sel.value = valorPrevio;
 }
 
+// Arma el detalle (fecha completa, montos con moneda, cotización, motivo)
+// que se ve al abrir la "i" de un movimiento en el Historial de Inversiones.
+function nombrePoolInversion(p) {
+if (p === "PESOS") return "Pesos";
+if (p === "DOLARES") return "Dólares";
+if (p === "FUERA") return "Fuera de la app";
+return p;
+}
+function formatoMontoPool(pool, monto) {
+if (monto === null || monto === undefined) return null;
+if (pool === "PESOS") return '$' + monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+if (pool === "DOLARES") return 'US$' + monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+if (pool === "S&P 500") return monto + ' nominal' + (monto === 1 ? '' : 'es');
+return String(monto);
+}
+function detalleMovimientoInversion(h) {
+let f = new Date(h.fecha + 'T00:00:00');
+let fechaCompleta = `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
+let det = [{ label: 'Fecha', value: fechaCompleta }];
+if (h.origen) det.push({ label: 'Salió de', value: nombrePoolInversion(h.origen) + (h.montoOrigen != null ? ' — ' + formatoMontoPool(h.origen, h.montoOrigen) : '') });
+if (h.destino && h.destino !== "FUERA") det.push({ label: 'Entró a', value: nombrePoolInversion(h.destino) + (h.montoDestino != null ? ' — ' + formatoMontoPool(h.destino, h.montoDestino) : '') });
+if (h.destino === "FUERA") det.push({ label: 'Destino', value: 'Salió de la plataforma definitivamente' });
+let cotizacion = h.precioCompraUsd;
+if (!cotizacion && h.montoOrigen && h.montoDestino && h.origen !== h.destino) {
+if (h.origen === "PESOS" && h.destino === "DOLARES") cotizacion = h.montoOrigen / h.montoDestino;
+else if (h.origen === "DOLARES" && h.destino === "PESOS") cotizacion = h.montoDestino / h.montoOrigen;
+else if (h.origen === "S&P 500" && (h.destino === "PESOS" || h.destino === "DOLARES")) cotizacion = h.montoDestino / h.montoOrigen;
+}
+if (cotizacion) det.push({ label: 'Cotización usada', value: '$' + cotizacion.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' por USD' });
+if (h.motivo) det.push({ label: 'Motivo', value: escapeHTML(h.motivo) });
+return det;
+}
+
 const COLOR_MOV = { 'Inversión': '#10b981', 'Retiro': '#3b82f6', 'Extracción': '#ef4444' };
 
 function renderizarTablaDetalleInversiones() {
@@ -458,7 +491,7 @@ filas.forEach(h => {
         titulo: `<span style="color:${colorMov};">${h.mov}</span> · ${escapeHTML(h.instrumento)}`,
         subtitulo: `${escapeHTML(describirMovimientoInversion(h))} · ${ff}`,
         monto: montoTxt,
-        detalles: [],
+        detalles: detalleMovimientoInversion(h),
         acciones: `<button class="btn-borrar" onclick="revertirMovimientoInversion('${h.id}')">Revertir</button>`
     });
 });
